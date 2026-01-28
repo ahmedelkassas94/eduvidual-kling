@@ -1,0 +1,37 @@
+{
+  "project_id": "5cf7858e",
+  "user_prompt": "test",
+  "target_duration_s": 30,
+  "style_bible": {
+    "visual_style": "Naturalistic colors with slight warm tones, shallow depth of field to isolate the subject, subtle film grain for texture",
+    "camera_rules": "Use smooth camera movements, avoid sudden cuts, maintain consistent screen direction, keep the subject centered or following the rule of thirds",
+    "lighting_rules": "Soft, diffused key lighting from the left side, balanced fill light to reduce harsh shadows, warm color temperature around 3200K",
+    "continuity_rules": "Maintain identical wardrobe and props on the main subject, keep background elements consistent, ensure lighting direction and intensity remain stable across scenes"
+  },
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Introduce a young woman in casual blue jeans and white shirt standing in a sunlit modern kitchen holding a steaming mug.\n\nGLOBAL CONTINUITY:\n- main subject: young woman, blue jeans, white shirt, shoulder-length brown hair, holding a ceramic mug\n- location: modern kitchen with wooden countertops, potted plant on windowsill, stainless steel appliances\n\nSHOT 1 (0–3s):\n- framing: medium shot, subject centered\n- lens: 50mm\n- camera movement: slow dolly forward\n- subject & action: woman lifts mug to lips by 1s, sips by 2s, lowers mug by 3s\n- environment details: sunlight through window, green plant leaves, coffee machine on counter\n- lighting: soft natural light from left, warm color temp\n- cinematic look: slight film grain, moderate contrast, shallow depth of field\n\nSHOT 2 (3–7s):\n- framing: close-up on face, subject slightly right of frame\n- lens: 85mm\n- camera movement: static\n- subject & action: woman smiles gently at camera by 5s, blinks slowly by 7s\n- environment details: blurred background, faint steam from mug\n- lighting: soft fill light from front, warm tone\n- cinematic look: smooth skin tones, subtle bokeh\n\nSHOT 3 (7–10s):\n- framing: medium wide shot, subject left of frame\n- lens: 35mm\n- camera movement: slow pan right\n- subject & action: woman sets mug down on counter by 8s, turns head to window by 10s\n- environment details: sunlight reflections on counter, plant leaves moving slightly\n- lighting: directional soft light from left\n- cinematic look: natural colors, gentle shadows\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow dolly forward, static close-up, slow pan right",
+      "audio_cue": "soft morning ambient sounds with faint kettle whistle"
+    },
+    {
+      "scene_id": 2,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Show the woman noticing a sudden power outage and reacting with surprise in the same kitchen.\n\nGLOBAL CONTINUITY:\n- main subject: young woman, blue jeans, white shirt, shoulder-length brown hair, holding ceramic mug\n- location: modern kitchen with wooden countertops, potted plant on windowsill, stainless steel appliances\n\nSHOT 1 (0–3s):\n- framing: medium shot, subject centered\n- lens: 50mm\n- camera movement: handheld subtle\n- subject & action: woman looks up startled by 1s, eyes widen by 2s, mouth opens slightly by 3s\n- environment details: lights flicker, coffee machine stops, shadows deepen\n- lighting: sudden dimming, cooler color temp\n- cinematic look: increased contrast, slight motion blur\n\nSHOT 2 (3–7s):\n- framing: close-up on face, subject right of frame\n- lens: 85mm\n- camera movement: static\n- subject & action: woman blinks rapidly by 4s, looks toward window by 6s, frowns by 7s\n- environment details: darkened background, faint streetlight glow outside window\n- lighting: low key, soft shadows\n- cinematic look: moody lighting, shallow depth of field\n\nSHOT 3 (7–10s):\n- framing: medium wide shot, subject left of frame\n- lens: 35mm\n- camera movement: slow pan left\n- subject & action: woman sets mug down carefully by 8s, reaches for phone on counter by 10s\n- environment details: dim kitchen, phone screen glow\n- lighting: minimal ambient light, cool tone\n- cinematic look: muted colors, subtle highlights\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "handheld subtle, static close-up, slow pan left",
+      "audio_cue": "sudden silence, faint electrical hum stops"
+    },
+    {
+      "scene_id": 3,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Depict the woman lighting a candle on the kitchen counter, restoring warm light and calm.\n\nGLOBAL CONTINUITY:\n- main subject: young woman, blue jeans, white shirt, shoulder-length brown hair, holding ceramic mug\n- location: modern kitchen with wooden countertops, potted plant on windowsill, stainless steel appliances\n\nSHOT 1 (0–3s):\n- framing: medium shot, subject centered\n- lens: 50mm\n- camera movement: slow dolly backward\n- subject & action: woman picks up candle by 1s, strikes match by 2s, flame ignites by 3s\n- environment details: dark kitchen, candle box on counter, faint window outline\n- lighting: warm candle glow, soft shadows\n- cinematic look: warm color grading, gentle contrast\n\nSHOT 2 (3–7s):\n- framing: close-up on hands and candle, subject slightly right\n- lens: 85mm\n- camera movement: static\n- subject & action: woman holds candle steady by 5s, places it on counter by 7s\n- environment details: flickering flame, textured wooden countertop\n- lighting: warm, soft, flickering\n- cinematic look: shallow depth of field, warm highlights\n\nSHOT 3 (7–10s):\n- framing: medium wide shot, subject left of frame\n- lens: 35mm\n- camera movement: slow pan right\n- subject & action: woman smiles softly by 8s, looks around kitchen by 10s\n- environment details: candlelight illuminating plant leaves, soft shadows on walls\n- lighting: warm, cozy ambiance\n- cinematic look: natural colors, smooth gradation\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow dolly backward, static close-up, slow pan right",
+      "audio_cue": "soft crackling of candle flame, quiet ambient room tone"
+    }
+  ]
+}

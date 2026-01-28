@@ -1,0 +1,113 @@
+{
+  "project_id": "df290897",
+  "user_prompt": "How does photosynthesis work? Explain the process of plants converting sunlight into energy.",
+  "target_duration_s": 20,
+  "style_bible": {
+    "visual_style": "Clean educational illustration, semi-realistic plants, simplified biology diagrams, bold arrows and particles, minimal text.",
+    "camera_rules": "Slow, smooth camera moves only; no sudden cuts; maintain clear focal subject each frame.",
+    "lighting_rules": "Bright natural daylight tones, high contrast between subjects and background, glowing effects for energy.",
+    "continuity_rules": "Plant remains consistent in color and shape; transitions move logically from whole plant to microscopic views and back."
+  },
+  "clips": [],
+  "frames": [
+    {
+      "frame_id": 1,
+      "duration_s": 3,
+      "image_prompt": "A green plant centered in frame with broad leaves, soil at bottom. Yellow sunlight rays from top left pointing down toward leaves, arrows sliding downward. Background is blue sky gradient. Small glowing energy particles appear where light hits leaves.",
+      "animation_type": "ken_burns_zoom_in",
+      "on_screen_text_overlay": "Plants capture sunlight",
+      "continuity_note": "Camera moves closer toward the main leaf, preparing for a leaf-level view in the next frame.",
+      "environment_details": [
+        "Blue sky background",
+        "Brown soil base"
+      ],
+      "lighting": "Bright daylight with glowing sunlight rays",
+      "cinematic_look": "Soft depth of field, vivid greens"
+    },
+    {
+      "frame_id": 2,
+      "duration_s": 3,
+      "image_prompt": "Close-up of a single leaf filling the frame. Tiny pores (stomata) on the leaf surface. Gray CO2 molecules represented as labeled bubbles moving from right to left into the leaf through arrows sliding inward.",
+      "animation_type": "hold",
+      "on_screen_text_overlay": "Carbon dioxide enters leaf",
+      "continuity_note": "Leaf texture and color remain consistent as the view shifts downward toward internal transport.",
+      "environment_details": [
+        "Leaf surface texture",
+        "Soft green background blur"
+      ],
+      "lighting": "Even natural light highlighting leaf surface",
+      "cinematic_look": "Macro-style clarity"
+    },
+    {
+      "frame_id": 3,
+      "duration_s": 3,
+      "image_prompt": "Cross-section of plant roots at bottom and stem rising upward. Blue water droplets in soil move upward through root tubes, arrows pointing up the stem toward the leaf.",
+      "animation_type": "pan_up",
+      "on_screen_text_overlay": "Water moves upward",
+      "continuity_note": "Upward motion leads the viewer toward the leaf interior in the next frame.",
+      "environment_details": [
+        "Soil particles",
+        "Root fibers"
+      ],
+      "lighting": "Softer underground light transitioning brighter upward",
+      "cinematic_look": "Clean educational cutaway"
+    },
+    {
+      "frame_id": 4,
+      "duration_s": 3,
+      "image_prompt": "Microscopic view inside a leaf cell. Green chloroplasts floating in fluid. Yellow light particles enter chloroplasts, spinning slightly. Arrows show light energy converting into glowing energy icons.",
+      "animation_type": "ken_burns_zoom_in",
+      "on_screen_text_overlay": "Light energy captured",
+      "continuity_note": "Energy glow intensifies and transitions into molecular assembly next.",
+      "environment_details": [
+        "Cell fluid background",
+        "Multiple chloroplasts"
+      ],
+      "lighting": "Glowing highlights on chloroplasts",
+      "cinematic_look": "Vibrant microscopic sci‑visual"
+    },
+    {
+      "frame_id": 5,
+      "duration_s": 3,
+      "image_prompt": "Inside chloroplast: CO2 and water molecules shown as small icons combining along circular arrows to form a larger glucose molecule labeled C6H12O6, rotating slowly.",
+      "animation_type": "hold",
+      "on_screen_text_overlay": "Sugar is made",
+      "continuity_note": "Finished glucose molecule moves outward toward the leaf edge.",
+      "environment_details": [
+        "Diagrammatic molecular icons",
+        "Green cellular background"
+      ],
+      "lighting": "Bright, focused glow on glucose",
+      "cinematic_look": "Clear infographic style"
+    },
+    {
+      "frame_id": 6,
+      "duration_s": 3,
+      "image_prompt": "Leaf edge with oxygen molecules (O2) shown as paired red spheres exiting into the air, arrows pointing outward. Glucose molecules move downward into the stem.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Oxygen released",
+      "continuity_note": "Outgoing motion opens space for final summary view.",
+      "environment_details": [
+        "Open air background",
+        "Leaf edge detail"
+      ],
+      "lighting": "Fresh, airy daylight",
+      "cinematic_look": "Light and uplifting tone"
+    },
+    {
+      "frame_id": 7,
+      "duration_s": 2,
+      "image_prompt": "Whole plant again centered. Glucose icons distributed through stem and leaves, softly glowing. Sunlight still shining from above, gentle arrows looping to show ongoing process.",
+      "animation_type": "ken_burns_zoom_out",
+      "on_screen_text_overlay": "Energy stored as sugar",
+      "continuity_note": "Process visually loops, implying photosynthesis continues.",
+      "environment_details": [
+        "Sky backdrop",
+        "Ground line"
+      ],
+      "lighting": "Warm, balanced daylight",
+      "cinematic_look": "Complete, calm final frame"
+    }
+  ],
+  "full_script_20s": "The video shows how plants use sunlight, water, and carbon dioxide to make energy-rich sugar through photosynthesis, releasing oxygen as a byproduct."
+}

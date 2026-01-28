@@ -1,0 +1,128 @@
+{
+  "project_id": "633e1f74",
+  "user_prompt": "Describe Bernoulli’s principle through an airplane wing example in depth.",
+  "target_duration_s": 20,
+  "style_bible": {
+    "visual_style": "Clean scientific visualization blended with cinematic realism, semi-transparent airflow graphics over a realistic airplane wing.",
+    "camera_rules": "Smooth, deliberate movements; no abrupt motion; prioritize clarity of airflow and pressure visuals.",
+    "lighting_rules": "Bright neutral daylight with soft highlights; airflow and pressure graphics glow subtly without overpowering.",
+    "continuity_rules": "Airplane wing orientation, airflow direction, and graphic color coding remain consistent across all shots and clips."
+  },
+  "clips": [
+    {
+      "clip_id": 1,
+      "duration_s": 10,
+      "clip_script": "Introduce the airplane wing and show how incoming air divides and accelerates over the curved top surface.",
+      "shots": [
+        {
+          "shot_id": 1,
+          "time_range": "0–3s",
+          "framing": "Wide side view of an airplane wing cutting through the sky",
+          "lens": "24mm",
+          "camera_movement": "slow dolly",
+          "subject_action": "The wing moves steadily forward as faint airflow lines approach the leading edge.",
+          "on_screen_text_overlay": "none",
+          "continuity_note": "Airflow lines continue forming along the wing surface into the next shot.",
+          "environment_details": [
+            "Blue sky backdrop",
+            "Thin white airflow streamlines"
+          ],
+          "lighting": "Bright daylight with soft reflections on the wing",
+          "cinematic_look": "High clarity, natural color grading"
+        },
+        {
+          "shot_id": 2,
+          "time_range": "3–7s",
+          "framing": "Medium close-up of the wing’s cross-section",
+          "lens": "35mm",
+          "camera_movement": "static explanatory hold (no camera motion)",
+          "subject_action": "Airflow lines speed up over the curved top and slow underneath.",
+          "on_screen_text_overlay": "\"Faster air above wing\"",
+          "continuity_note": "Speed difference between upper and lower airflow remains visible for the next shot.",
+          "environment_details": [
+            "Semi-transparent wing surface",
+            "Color-coded airflow lines"
+          ],
+          "lighting": "Even, glare-free lighting emphasizing airflow",
+          "cinematic_look": "Scientific visualization overlay"
+        },
+        {
+          "shot_id": 3,
+          "time_range": "7–10s",
+          "framing": "Angled close-up emphasizing top vs bottom airflow",
+          "lens": "50mm",
+          "camera_movement": "pan",
+          "subject_action": "Upper airflow stretches and thins while lower airflow remains denser.",
+          "on_screen_text_overlay": "none",
+          "continuity_note": "FINAL FRAME HANDOFF: Wing frozen mid-flight with airflow lines active, ready to introduce pressure difference.",
+          "environment_details": [
+            "Extended airflow trails",
+            "Stable horizon line"
+          ],
+          "lighting": "Consistent daylight with subtle highlights",
+          "cinematic_look": "Smooth cinematic motion with clean overlays"
+        }
+      ],
+      "negative_prompt": "logos, watermarks, brand marks, extra limbs, distorted faces, flicker, glitch, people, human, face, hands, cockpit, unreadable tiny text",
+      "camera": "Virtual stabilized camera"
+    },
+    {
+      "clip_id": 2,
+      "duration_s": 10,
+      "clip_script": "Build on the airflow to explain pressure differences and show how lift is produced.",
+      "shots": [
+        {
+          "shot_id": 1,
+          "time_range": "10–13s",
+          "framing": "Same wing angle as previous final frame",
+          "lens": "50mm",
+          "camera_movement": "static",
+          "subject_action": "Pressure shading appears above and below the wing.",
+          "on_screen_text_overlay": "none",
+          "continuity_note": "Begins exactly from Clip 1 final frame; pressure colors intensify into the next shot.",
+          "environment_details": [
+            "Blue low-pressure zone above wing",
+            "Red high-pressure zone below"
+          ],
+          "lighting": "Neutral daylight with colored pressure glow",
+          "cinematic_look": "Seamless continuity from previous clip"
+        },
+        {
+          "shot_id": 2,
+          "time_range": "13–17s",
+          "framing": "Clean cross-sectional diagram view of the wing",
+          "lens": "35mm",
+          "camera_movement": "static explanatory hold (no camera motion)",
+          "subject_action": "Arrows illustrate pressure pushing up from below.",
+          "on_screen_text_overlay": "\"Lower pressure above\"",
+          "continuity_note": "Pressure arrows remain in place as lift visualization begins next.",
+          "environment_details": [
+            "Simplified wing outline",
+            "Upward force arrows"
+          ],
+          "lighting": "Flat, high-contrast educational lighting",
+          "cinematic_look": "Minimalist scientific diagram style"
+        },
+        {
+          "shot_id": 3,
+          "time_range": "17–20s",
+          "framing": "Three-quarter view of wing gaining upward motion",
+          "lens": "85mm",
+          "camera_movement": "slow dolly",
+          "subject_action": "The wing subtly rises as lift force arrows glow.",
+          "on_screen_text_overlay": "none",
+          "continuity_note": "FINAL FRAME HANDOFF: Wing stabilized in lifted position with airflow and pressure visuals unified.",
+          "environment_details": [
+            "Glowing lift vectors",
+            "Clear sky background"
+          ],
+          "lighting": "Bright uplifting light emphasizing motion",
+          "cinematic_look": "Inspirational, clean educational finish"
+        }
+      ],
+      "negative_prompt": "logos, watermarks, brand marks, extra limbs, distorted faces, flicker, glitch, people, human, face, hands, cockpit, unreadable tiny text",
+      "camera": "Virtual stabilized camera"
+    }
+  ],
+  "full_script_20s": "A realistic airplane wing in flight is shown. Airflow lines reveal how air splits above and below the wing. The video slows to explain that faster airflow above the wing creates lower pressure. The difference between upper and lower pressure is visualized, leading to the upward lift force that keeps the airplane aloft."
+}

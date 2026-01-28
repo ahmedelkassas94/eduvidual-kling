@@ -1,0 +1,36 @@
+{
+  "project_id": "82435872",
+  "user_prompt": "A cinematic Mars rescue mission",
+  "target_duration_s": 30,
+  "style_bible": {
+    "visual_style": "Cinematic sci-fi with high contrast, warm red-orange hues of Mars surface, detailed textures on spacesuits and rover, and realistic dust particles.",
+    "camera_rules": "Use steady and smooth camera movements; prefer 35mm and 50mm lenses for natural perspective; avoid shaky or handheld shots except subtle push-ins.",
+    "continuity_rules": "Maintain same astronaut in white and red spacesuit with helmet, same Mars rocky terrain with rover and communication equipment; consistent lighting and weather conditions."
+  },
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Establish the astronaut stranded on Mars near a damaged rover.\n\nSHOT 1 (0–3s):\n- framing: Medium wide shot\n- lens: 35mm\n- camera movement: Slow dolly forward\n- subject & action: Astronaut kneeling beside a rover, inspecting damage\n- environment details: Rocky red terrain, dust swirling lightly\n- lighting: Harsh sunlight casting strong shadows\n- cinematic look: Warm tones with slight lens flare\n\nSHOT 2 (3–7s):\n- framing: Close-up\n- lens: 50mm\n- camera movement: Static\n- subject & action: Astronaut's helmet visor reflecting Martian landscape, slight head turn\n- environment details: Dust particles visible on visor\n- lighting: Soft fill light on face\n- cinematic look: High detail, reflective surfaces emphasized\n\nSHOT 3 (7–10s):\n- framing: Wide shot\n- lens: 35mm\n- camera movement: Slow pan left\n- subject & action: Rover with visible damage, communication antenna bent\n- environment details: Distant rocky hills and red sky\n- lighting: Natural sunlight\n- cinematic look: Crisp and detailed\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "Steady dolly and static shots with smooth pan",
+      "audio_cue": "Ambient wind and faint mechanical beeping"
+    },
+    {
+      "scene_id": 2,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Show astronaut attempting to repair rover and signal for rescue.\n\nSHOT 1 (0–3s):\n- framing: Medium shot\n- lens: 50mm\n- camera movement: Slow handheld push-in\n- subject & action: Astronaut using tools on rover's control panel\n- environment details: Dust particles in air, rover lights flickering\n- lighting: Harsh sunlight with fill light on astronaut\n- cinematic look: Tense and focused\n\nSHOT 2 (3–7s):\n- framing: Close-up\n- lens: 85mm\n- camera movement: Static\n- subject & action: Astronaut's gloved hand pressing a button, sparks fly\n- environment details: Control panel with blinking red lights\n- lighting: Contrast between sunlight and sparks\n- cinematic look: Dramatic with sharp highlights\n\nSHOT 3 (7–10s):\n- framing: Wide shot\n- lens: 35mm\n- camera movement: Slow crane up\n- subject & action: Astronaut standing beside rover raising arm signaling\n- environment details: Dust storm beginning to pick up\n- lighting: Sunlight filtered through dust\n- cinematic look: Atmospheric and suspenseful\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "Handheld push-in and crane shots for tension",
+      "audio_cue": "Mechanical tool sounds mixed with rising wind"
+    },
+    {
+      "scene_id": 3,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Rescue arrives and astronaut is saved.\n\nSHOT 1 (0–3s):\n- framing: Wide shot\n- lens: 35mm\n- camera movement: Slow dolly out\n- subject & action: Rescue rover approaching astronaut\n- environment details: Dust clearing, red rocky landscape\n- lighting: Soft sunlight with warm glow\n- cinematic look: Hopeful and bright\n\nSHOT 2 (3–7s):\n- framing: Medium close-up\n- lens: 50mm\n- camera movement: Static\n- subject & action: Astronaut removing helmet, smiling\n- environment details: Rescue rover door open behind\n- lighting: Balanced natural light\n- cinematic look: Warm and intimate\n\nSHOT 3 (7–10s):\n- framing: Wide shot\n- lens: 35mm\n- camera movement: Steady pan right\n- subject & action: Rescue rover driving away with astronaut inside\n- environment details: Mars horizon with setting sun\n- lighting: Golden hour lighting\n- cinematic look: Peaceful and resolved\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "Smooth dolly and steady pans for resolution",
+      "audio_cue": "Soft mechanical hum and distant wind"
+    }
+  ]
+}

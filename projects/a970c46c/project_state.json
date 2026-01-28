@@ -1,0 +1,37 @@
+{
+  "project_id": "a970c46c",
+  "user_prompt": "explain bernoulli’s principle using the airplane wing example while a plane is flying through camera movements and narration",
+  "target_duration_s": 30,
+  "style_bible": {
+    "visual_style": "Realistic with natural colors, slight film grain for cinematic texture, clear focus on mechanical details of the airplane wing",
+    "camera_rules": "Use smooth continuous camera movements, avoid jump cuts, maintain consistent screen direction, prioritize medium and close framing to highlight wing details",
+    "lighting_rules": "Soft natural daylight with directional sunlight from above and side, balanced shadows to emphasize wing curvature and airflow effects",
+    "continuity_rules": "Maintain the airplane wing as the primary subject throughout, consistent outdoor sky background with clouds, no sudden changes in lighting or weather"
+  },
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Introduce the airplane wing flying steadily through clear sky to establish the setting and subject\n\nGLOBAL CONTINUITY:\n- primary subject: airplane wing, metallic surface with aerodynamic shape, large scale\n- environment: high altitude sky with soft clouds, blue background, gentle sunlight\n\nSHOT 1 (0–3s):\n- framing: medium shot, wing centered and extending from left to right\n- lens: 35mm\n- camera movement: slow dolly forward\n- subject & action: wing steadily moves left to right, slight wing flex visible by 3s\n- environment details: scattered white clouds below, blue sky above, sun glint on wing surface\n- lighting: soft directional sunlight from top left, warm color temp\n- cinematic look: natural film stock, moderate contrast, shallow depth of field on wing edge\n\nSHOT 2 (3–7s):\n- framing: close-up on wing cross-section near leading edge\n- lens: 50mm\n- camera movement: slow pan along wing length\n- subject & action: airflow visualized as translucent blue streamlines moving smoothly over wing surface\n- environment details: sky blurred in background, subtle cloud reflections\n- lighting: soft side light highlighting wing curvature\n- cinematic look: crisp focus on wing surface, slight vignette\n\nSHOT 3 (7–10s):\n- framing: medium shot, wing angled slightly upward\n- lens: 35mm\n- camera movement: static\n- subject & action: wing steady, airflow streamlines continue, wingtip visible\n- environment details: bright sky with distant clouds\n- lighting: consistent directional sunlight\n- cinematic look: natural colors, moderate contrast\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow dolly forward then slow pan along wing length, ending static",
+      "audio_cue": "Narrator explains the airplane wing's shape and its steady flight through the sky, introducing Bernoulli's principle context"
+    },
+    {
+      "scene_id": 2,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Show airflow speeding over the curved top of the wing and slower under the flat bottom to visualize pressure difference\n\nGLOBAL CONTINUITY:\n- primary subject: airplane wing, aerodynamic shape with smooth metallic surface\n- environment: same high altitude sky with soft clouds, consistent lighting\n\nSHOT 1 (0–3s):\n- framing: close-up on wing cross-section from side\n- lens: 50mm\n- camera movement: slow pan from leading edge to trailing edge\n- subject & action: animated airflow lines appear, blue streamlines speed up above wing, slower below\n- environment details: blurred sky background with soft clouds\n- lighting: soft directional light from above\n- cinematic look: sharp focus on wing surface, slight motion blur on airflow lines\n\nSHOT 2 (3–7s):\n- framing: medium shot showing wing top and bottom surfaces\n- lens: 35mm\n- camera movement: slow tilt down from top of wing to bottom\n- subject & action: airflow lines intensify above wing, pressure difference illustrated by subtle color shift (cooler blue above, warmer below)\n- environment details: clear sky with faint cloud outlines\n- lighting: balanced natural light\n- cinematic look: moderate contrast, natural colors\n\nSHOT 3 (7–10s):\n- framing: close-up on wing trailing edge\n- lens: 50mm\n- camera movement: slow dolly backward\n- subject & action: airflow lines converge behind wing, illustrating lift force direction\n- environment details: sky with soft clouds\n- lighting: consistent directional sunlight\n- cinematic look: crisp detail, slight depth of field\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow pan then slow tilt down followed by slow dolly backward",
+      "audio_cue": "Narrator describes how air moves faster over the curved top, slower underneath, creating lower pressure above and generating lift"
+    },
+    {
+      "scene_id": 3,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Demonstrate the resulting lift force on the wing as the airplane ascends smoothly\n\nGLOBAL CONTINUITY:\n- primary subject: airplane wing with visible aerodynamic shape\n- environment: clear blue sky with soft clouds, bright daylight\n\nSHOT 1 (0–3s):\n- framing: medium shot, wing angled upward\n- lens: 35mm\n- camera movement: slow crane upward\n- subject & action: wing rises smoothly, airflow lines continue flowing over wing\n- environment details: bright sky, distant clouds\n- lighting: soft directional sunlight from top left\n- cinematic look: natural film stock, moderate contrast\n\nSHOT 2 (3–7s):\n- framing: close-up on wingtip\n- lens: 50mm\n- camera movement: slow pan inward toward wing root\n- subject & action: wingtip vortices subtly visible, wing flexes upward slightly\n- environment details: sky background with faint clouds\n- lighting: balanced natural light\n- cinematic look: crisp focus, slight depth of field\n\nSHOT 3 (7–10s):\n- framing: wide shot showing full wing and part of fuselage\n- lens: 24mm\n- camera movement: slow dolly backward and slight tilt up\n- subject & action: airplane climbs steadily, wing clearly generating lift\n- environment details: expansive blue sky, scattered clouds\n- lighting: consistent sunlight\n- cinematic look: cinematic wide shot with natural colors\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow crane upward then slow pan inward followed by slow dolly backward and tilt up",
+      "audio_cue": "Narrator explains how the pressure difference creates lift, enabling the airplane to ascend smoothly through the sky"
+    }
+  ]
+}

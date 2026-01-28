@@ -1,0 +1,92 @@
+{
+  "project_id": "7dad8d32",
+  "user_prompt": "A cinematic Mars rescue mission",
+  "target_duration_s": 60,
+  "style_bible": {
+    "visual_style": "High-contrast cinematic with warm reddish hues emphasizing the Martian landscape; realistic textures with subtle lens flares and dust particles in the atmosphere.",
+    "camera_rules": "Use wide establishing shots to showcase vastness, smooth tracking shots for movement, and close-ups for emotional impact; avoid rapid cuts; maintain consistent color grading.",
+    "continuity_rules": "Maintain consistent lighting direction and time of day across scenes; ensure character and equipment placement continuity; preserve narrative flow with logical spatial transitions."
+  },
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_s": 6,
+      "prompt": "Wide establishing shot of the barren Martian surface at dawn, red dust swirling gently, distant rocky formations under a hazy orange sky.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "Slow pan from left to right revealing the vast landscape.",
+      "audio_cue": "Soft wind blowing with faint mechanical hum in the background."
+    },
+    {
+      "scene_id": 2,
+      "duration_s": 7,
+      "prompt": "Medium shot of a rugged Mars rover navigating rocky terrain, dust kicking up behind its wheels, with a human silhouette visible inside the cockpit.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "Tracking shot following the rover from the side at ground level.",
+      "audio_cue": "Mechanical engine sounds mixed with crunching gravel."
+    },
+    {
+      "scene_id": 3,
+      "duration_s": 5,
+      "prompt": "Close-up of astronaut’s gloved hand pressing buttons on a control panel inside the rover, illuminated by red emergency lights.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "Static close-up focusing on hand movements and illuminated buttons.",
+      "audio_cue": "Beeping of control panel and faint breathing through helmet."
+    },
+    {
+      "scene_id": 4,
+      "duration_s": 6,
+      "prompt": "Wide shot of a crashed Mars lander partially buried in red dust near a cliff edge, with smoke rising from its damaged hull.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "Slow zoom in from a high angle to emphasize damage and isolation.",
+      "audio_cue": "Crackling of damaged electronics and distant wind gusts."
+    },
+    {
+      "scene_id": 5,
+      "duration_s": 4,
+      "prompt": "Medium shot of an astronaut in a red spacesuit stepping cautiously out of the rover, dust swirling with each step.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "Tracking shot moving backward as astronaut walks forward.",
+      "audio_cue": "Heavy breathing and soft footsteps on gravel."
+    },
+    {
+      "scene_id": 6,
+      "duration_s": 7,
+      "prompt": "Close-up of astronaut’s helmet visor reflecting the crashed lander and rocky terrain, with subtle scratches on the visor surface.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "Static close-up focusing on visor reflection and facial expression.",
+      "audio_cue": "Heartbeat sound mixed with distant wind."
+    },
+    {
+      "scene_id": 7,
+      "duration_s": 5,
+      "prompt": "Wide shot of a drone launching from the rover, ascending into the dusty orange sky with Mars landscape below.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "Tracking shot following drone ascent from ground level to sky.",
+      "audio_cue": "Whirring drone motors and rising wind sounds."
+    },
+    {
+      "scene_id": 8,
+      "duration_s": 6,
+      "prompt": "Medium shot of astronaut using a handheld scanner, green holographic interface glowing against the red dust background.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "Over-the-shoulder shot focusing on scanner and interface details.",
+      "audio_cue": "Electronic beeps and soft static interference."
+    },
+    {
+      "scene_id": 9,
+      "duration_s": 8,
+      "prompt": "Wide shot of the astronaut and rover silhouetted against a Martian sunset, casting long shadows over the rugged terrain.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "Slow dolly out to reveal expansive horizon and fading light.",
+      "audio_cue": "Ambient wind with subtle orchestral swell."
+    },
+    {
+      "scene_id": 10,
+      "duration_s": 4,
+      "prompt": "Close-up of astronaut’s helmet as a communication light blinks green, signaling successful contact.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "Tight close-up with shallow depth of field on helmet and blinking light.",
+      "audio_cue": "Clear electronic beep followed by faint voice transmission."
+    }
+  ]
+}

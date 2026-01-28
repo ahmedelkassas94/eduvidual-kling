@@ -1,0 +1,37 @@
+{
+  "project_id": "1c5d6a22",
+  "user_prompt": "explain bernoulli’s principle using the airplane wing examplewhile a plane is flying through camera movements and narration",
+  "target_duration_s": 30,
+  "style_bible": {
+    "visual_style": "Realistic cinematic with natural colors, slight film grain, and moderate contrast emphasizing depth and texture.",
+    "camera_rules": "Use smooth continuous camera movements; avoid jump cuts; maintain consistent framing transitions; keep main subject centered or balanced in frame.",
+    "lighting_rules": "Soft natural daylight with subtle directional highlights from above and side; maintain consistent color temperature around 5600K; avoid harsh shadows.",
+    "continuity_rules": "Maintain consistent wardrobe and props on main subject; keep the airplane wing and sky environment consistent; ensure lighting direction and intensity remain stable across scenes."
+  },
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Establish a small airplane flying steadily in clear blue sky, focusing on the wing shape and airflow.\n\nGLOBAL CONTINUITY:\n- main subject: pilot in blue flight suit with helmet, sitting in cockpit; airplane wing visible through window\n- location: cockpit interior and exterior wing against clear sky\n\nSHOT 1 (0–3s):\n- framing: medium shot from inside cockpit showing pilot and wing outside window on left\n- lens: 35mm\n- camera movement: slow dolly forward\n- subject & action: pilot adjusts throttle by 1s, looks forward by 2s, steady gaze at wing by 3s\n- environment details: cockpit instruments, wing rivets, clear sky\n- lighting: soft daylight from left, natural color temp\n- cinematic look: subtle film grain, medium contrast, shallow depth of field on pilot\n\nSHOT 2 (3–7s):\n- framing: wide shot outside showing full wing and airflow lines visualized as translucent streams\n- lens: 24mm\n- camera movement: slow pan along wing from root to tip\n- subject & action: airflow lines accelerate over curved upper wing surface, slower under flat bottom\n- environment details: wing surface texture, sky gradient, distant horizon\n- lighting: directional sunlight from above, soft shadows\n- cinematic look: crisp detail, moderate contrast, deep focus\n\nSHOT 3 (7–10s):\n- framing: close-up on wing cross-section with animated airflow arrows\n- lens: 50mm\n- camera movement: static\n- subject & action: arrows show faster airflow above wing, slower below; pressure difference indicated by subtle shading\n- environment details: wing paint texture, airflow visualization\n- lighting: soft side light from right\n- cinematic look: clean sharp image, clear visualization\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow dolly forward inside cockpit, then slow pan outside wing, ending with static close-up",
+      "audio_cue": "ambient wind noise with soft engine hum"
+    },
+    {
+      "scene_id": 2,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Show airflow speeding up over wing causing lift, with pilot reacting to turbulence.\n\nGLOBAL CONTINUITY:\n- main subject: pilot in blue flight suit with helmet, seated in cockpit\n- location: cockpit interior and exterior wing against partly cloudy sky\n\nSHOT 1 (0–3s):\n- framing: medium close-up of pilot from side window\n- lens: 50mm\n- camera movement: handheld subtle\n- subject & action: pilot grips controls tightly by 1s, eyes widen by 2s, slight head turn by 3s\n- environment details: cockpit controls, wing visible outside window\n- lighting: soft daylight from left\n- cinematic look: natural skin tones, moderate contrast\n\nSHOT 2 (3–7s):\n- framing: wide shot outside wing showing turbulent airflow with swirling patterns above wing\n- lens: 24mm\n- camera movement: slow pan following airflow\n- subject & action: airflow visibly disturbed, vortices form near trailing edge\n- environment details: wing surface, clouds in background\n- lighting: directional sunlight with soft shadows\n- cinematic look: high detail, dynamic contrast\n\nSHOT 3 (7–10s):\n- framing: medium shot inside cockpit showing pilot stabilizing plane\n- lens: 35mm\n- camera movement: slow tilt down\n- subject & action: pilot adjusts yoke by 8s, steady gaze forward by 10s\n- environment details: instrument panel lights, wingtip visible\n- lighting: consistent soft daylight\n- cinematic look: balanced exposure, slight depth of field\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "handheld subtle inside cockpit, slow pan outside wing, slow tilt down inside cockpit",
+      "audio_cue": "increased wind turbulence sound with pilot breathing and control adjustments"
+    },
+    {
+      "scene_id": 3,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Demonstrate lift generation clearly with plane ascending smoothly, pilot confident.\n\nGLOBAL CONTINUITY:\n- main subject: pilot in blue flight suit with helmet, seated in cockpit\n- location: cockpit interior and exterior wing against sunrise sky\n\nSHOT 1 (0–3s):\n- framing: wide shot of airplane ascending with wing prominently visible\n- lens: 24mm\n- camera movement: slow crane upward following plane\n- subject & action: plane climbs steadily, wing angled upward by 3s\n- environment details: sun rising, clouds below, wing details\n- lighting: warm directional light from right\n- cinematic look: warm tones, high contrast, deep focus\n\nSHOT 2 (3–7s):\n- framing: medium shot inside cockpit showing pilot smiling and relaxed\n- lens: 50mm\n- camera movement: static\n- subject & action: pilot releases grip on controls by 5s, nods confidently by 7s\n- environment details: cockpit instruments, sunlight reflections\n- lighting: warm soft light from right\n- cinematic look: soft focus background, sharp subject\n\nSHOT 3 (7–10s):\n- framing: close-up on wing cross-section with clear airflow lines showing faster air above and slower below\n- lens: 85mm\n- camera movement: slow pan across wing\n- subject & action: airflow lines steady, pressure difference illustrated with subtle shading\n- environment details: wing texture, sky gradient\n- lighting: warm side light\n- cinematic look: sharp detail, vibrant colors\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow crane upward outside plane, static inside cockpit, slow pan close-up wing",
+      "audio_cue": "calm engine hum with uplifting orchestral music"
+    }
+  ]
+}

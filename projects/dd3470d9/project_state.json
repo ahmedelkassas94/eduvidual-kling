@@ -1,0 +1,37 @@
+{
+  "project_id": "dd3470d9",
+  "user_prompt": "explain bernoulli’s principle using the airplane wing example",
+  "target_duration_s": 30,
+  "style_bible": {
+    "visual_style": "Realistic with natural colors, slight cinematic contrast, shallow depth of field to isolate subjects, smooth textures on surfaces",
+    "camera_rules": "Use mostly steady shots with slow dolly or pan movements, maintain consistent screen direction, avoid jump cuts, keep subject centered or following rule of thirds",
+    "lighting_rules": "Soft natural daylight from left side, warm color temperature, avoid harsh shadows, maintain consistent lighting across scenes",
+    "continuity_rules": "Main subject wears a blue pilot uniform with white insignia, short brown hair; location is a modern aircraft hangar with visible airplane wing and tools; props and wardrobe remain consistent; no sudden changes in position or props"
+  },
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Introduce the pilot standing next to the airplane wing in the hangar explaining Bernoulli’s principle.\n\nGLOBAL CONTINUITY:\n- main subject: male pilot, blue uniform with white insignia, short brown hair\n- location: aircraft hangar with airplane wing, toolboxes, large windows\n\nSHOT 1 (0–3s):\n- framing: medium shot, pilot centered\n- lens: 50mm\n- camera movement: slow dolly in\n- subject & action: pilot stands by wing, gestures toward upper wing surface at 1s, points along wing curve at 2s, looks at camera at 3s\n- environment details: airplane wing with visible airfoil shape, toolboxes in background, sunlight through windows\n- lighting: soft daylight from left, warm tone\n- cinematic look: slight film grain, moderate contrast, shallow depth of field\n\nSHOT 2 (3–7s):\n- framing: close-up on pilot’s hands tracing wing surface\n- lens: 85mm\n- camera movement: static\n- subject & action: pilot’s hands move smoothly along upper wing surface from leading edge to trailing edge\n- environment details: detailed wing texture, rivets, slight dust particles visible\n- lighting: soft side light from left\n- cinematic look: high sharpness on hands and wing, blurred background\n\nSHOT 3 (7–10s):\n- framing: medium wide shot, pilot and wing visible\n- lens: 35mm\n- camera movement: slow pan right\n- subject & action: pilot nods confidently, points upward toward wing’s airflow path drawn in air\n- environment details: airflow lines digitally visualized above wing, hangar interior\n- lighting: consistent soft daylight\n- cinematic look: balanced contrast, natural colors\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow dolly in, static, slow pan right",
+      "audio_cue": "calm explanatory voiceover with subtle ambient hangar sounds"
+    },
+    {
+      "scene_id": 2,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Show airflow speeding over the wing and causing pressure difference visually.\n\nGLOBAL CONTINUITY:\n- main subject: male pilot, blue uniform with white insignia, short brown hair\n- location: aircraft hangar with airplane wing, toolboxes, large windows\n\nSHOT 1 (0–3s):\n- framing: wide shot, wing and pilot on left\n- lens: 35mm\n- camera movement: slow dolly left\n- subject & action: pilot gestures upward, airflow lines begin to appear above wing at 1s, lines accelerate by 2s, pilot watches airflow at 3s\n- environment details: airplane wing, hangar beams, sunlight shafts\n- lighting: soft daylight from left\n- cinematic look: moderate contrast, clear airflow visualization\n\nSHOT 2 (3–7s):\n- framing: close-up on airflow lines over wing surface\n- lens: 50mm\n- camera movement: static\n- subject & action: airflow lines speed up over curved upper wing surface, slower airflow below wing visible at 5s, pressure icons appear subtly\n- environment details: wing texture, rivets, slight haze\n- lighting: soft side light\n- cinematic look: sharp focus on airflow, slight glow effect on lines\n\nSHOT 3 (7–10s):\n- framing: medium shot, pilot pointing at airflow difference\n- lens: 50mm\n- camera movement: slow pan left\n- subject & action: pilot explains pressure difference, nods at 9s, final frame shows airflow lines clearly\n- environment details: hangar interior, wing details\n- lighting: consistent soft daylight\n- cinematic look: natural colors, balanced contrast\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow dolly left, static, slow pan left",
+      "audio_cue": "increasing intensity in voiceover with subtle whooshing airflow sounds"
+    },
+    {
+      "scene_id": 3,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Demonstrate lift generated by airflow difference with pilot showing wing lift movement.\n\nGLOBAL CONTINUITY:\n- main subject: male pilot, blue uniform with white insignia, short brown hair\n- location: aircraft hangar with airplane wing, toolboxes, large windows\n\nSHOT 1 (0–3s):\n- framing: medium shot, pilot holding small model wing\n- lens: 50mm\n- camera movement: slow dolly in\n- subject & action: pilot lifts model wing slowly at 1s, tilts wing to show airflow at 2s, holds steady at 3s\n- environment details: hangar background, workbench, tools\n- lighting: soft daylight from left\n- cinematic look: shallow depth of field, warm tones\n\nSHOT 2 (3–7s):\n- framing: close-up on model wing with airflow lines\n- lens: 85mm\n- camera movement: static\n- subject & action: airflow lines speed over upper surface, pilot’s fingers steady model, lift arrow appears at 5s\n- environment details: wing texture, slight dust particles\n- lighting: soft side light\n- cinematic look: sharp focus, subtle glow on airflow\n\nSHOT 3 (7–10s):\n- framing: medium wide shot, pilot smiles and lowers model wing gently\n- lens: 35mm\n- camera movement: slow pan right\n- subject & action: pilot nods, places model on table, final frame on model wing\n- environment details: hangar interior, toolboxes\n- lighting: consistent soft daylight\n- cinematic look: natural colors, balanced contrast\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow dolly in, static, slow pan right",
+      "audio_cue": "conclusive voiceover with soft ambient hangar sounds and gentle uplifting music"
+    }
+  ]
+}

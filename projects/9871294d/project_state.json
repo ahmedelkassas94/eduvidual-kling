@@ -1,0 +1,30 @@
+{
+  "project_id": "9871294d",
+  "user_prompt": "Describe Bernoulli’s principle through an airplane wing example in depth.",
+  "target_duration_s": 20,
+  "style_bible": {
+    "visual_style": "Clean cinematic science visualization, realistic aircraft wing, subtle airflow particles, high-contrast educational overlays",
+    "camera_rules": "Camera remains outside aircraft, smooth deliberate moves, clear view of airflow over wing",
+    "lighting_rules": "Natural daylight, soft sun from above and slightly behind camera, no harsh shadows",
+    "continuity_rules": "Same airplane wing, altitude, sky, and camera screen direction maintained across scenes"
+  },
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Introduce airflow around an airplane wing and show speed difference above and below. GLOBAL CONTINUITY: Primary subject is a single airplane wing seen from outside in level flight, high altitude blue sky with thin clouds. Camera tracks left-to-right parallel to wing. Explanatory state: introducing air splitting and faster flow above.\nSHOT 1 (0–3s): framing: wide profile of wing from slightly front-left; lens: 35mm; camera movement: slow dolly alongside; subject & action: by 1s the wing enters frame, by 2s airflow particles approach, by 3s air visibly splits over and under the wing; on-screen text overlay: \"Wing meets air\"; environment details: blue sky, distant clouds, faint contrails; lighting: soft daylight from upper right; cinematic look: crisp realism, moderate depth of field.\nSHOT 2 (3–7s): framing: medium close-up of wing cross-section area; lens: 50mm; camera movement: static hold; subject & action: airflow particles trace paths, top stream stretches and accelerates while bottom remains steadier; on-screen text overlay: \"Air splits\"; environment details: sky gradient, subtle motion blur in particles; lighting: even soft light; cinematic look: clean scientific clarity.\nSHOT 3 (7–10s): framing: close-up along top surface of wing; lens: 85mm; camera movement: slow pan following airflow; subject & action: faster-moving particles streak along curved top surface, emphasizing speed; on-screen text overlay: \"Faster flow above\"; environment details: wing rivets, sky reflections; lighting: gentle highlight along wing curve; cinematic look: shallow depth of field, smooth filmic motion.",
+      "negative_prompt": "logos, watermarks, brand marks, extra limbs, distorted faces, flicker, glitch, people, human, face, hands, cockpit, unreadable tiny text",
+      "camera": "Exterior tracking shot parallel to wing, left-to-right screen direction maintained",
+      "audio_cue": "Off-screen narration explaining air splitting and faster flow over the wing"
+    },
+    {
+      "scene_id": 2,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Explain pressure differences and how they create lift, continuing from established airflow. GLOBAL CONTINUITY: Same wing, altitude, sky, and left-to-right camera direction as Scene 1. Explanatory state: faster flow above already shown; now linking speed to pressure and lift.\nSHOT 1 (0–3s): framing: medium shot of wing top and bottom visible; lens: 35mm; camera movement: static hold; subject & action: airflow particles above move fast and thin out, below move slower and denser; on-screen text overlay: \"Lower pressure\"; environment details: blue sky, thin clouds, wing underside shadow; lighting: soft daylight from above; cinematic look: balanced exposure, educational clarity.\nSHOT 2 (3–7s): framing: medium close-up under the wing; lens: 50mm; camera movement: slow tilt upward; subject & action: denser particles press upward under wing, visual arrows subtly indicating force; on-screen text overlay: \"Higher pressure\"; environment details: sky gradient, wing underside details; lighting: gentle reflected light; cinematic look: smooth motion, moderate depth of field.\nSHOT 3 (7–10s): framing: wide profile of entire wing; lens: 35mm; camera movement: crane slightly upward then hold; subject & action: wing subtly rises relative to airflow streams, particles curve downward behind wing; on-screen text overlay: \"Lift upward\"; environment details: open sky, distant clouds; lighting: soft sun rim light on wing edge; cinematic look: cinematic realism with clear final hold frame.",
+      "negative_prompt": "logos, watermarks, brand marks, extra limbs, distorted faces, flicker, glitch, people, human, face, hands, cockpit, unreadable tiny text",
+      "camera": "Exterior wide shot, slight upward crane ending in static hold, same direction and distance as prior scene",
+      "audio_cue": "Off-screen narration explaining pressure differences creating lift"
+    }
+  ],
+  "full_script": "0–2s Narration: \"An airplane wing shapes the air as it moves.\" On-screen text: \"Wing meets air\". 2–5s Narration: \"Air splits above and below the wing.\" On-screen text: \"Air splits\". 5–10s Narration: \"The curved top makes air move faster.\" On-screen text: \"Faster flow above\". 10–13s Narration: \"Faster air means lower pressure.\" On-screen text: \"Lower pressure\". 13–17s Narration: \"Slower air below stays higher pressure.\" On-screen text: \"Higher pressure\". 17–20s Narration: \"Pressure difference lifts the wing.\" On-screen text: \"Lift upward\"."
+}

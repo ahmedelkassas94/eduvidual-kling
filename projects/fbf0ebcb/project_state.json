@@ -1,0 +1,37 @@
+{
+  "project_id": "fbf0ebcb",
+  "user_prompt": "explain bernoulli’s principle using an airplane wing and airflow visualization",
+  "target_duration_s": 30,
+  "style_bible": {
+    "visual_style": "Clean, scientific, and realistic with clear airflow visualization using colored smoke or digital flow lines; focus on clarity and educational aesthetics.",
+    "camera_rules": "Use smooth, continuous camera movements with no jump cuts; maintain consistent screen direction; vary framing from wide to close-up to emphasize details.",
+    "lighting_rules": "Soft, diffuse lighting from above and side to highlight wing contours and airflow; neutral color temperature to maintain clarity and realism.",
+    "continuity_rules": "Keep the airplane wing as the primary subject centered in frame; maintain the same hangar or wind tunnel background with consistent lighting and airflow effects across scenes."
+  },
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Introduce the airplane wing in a wind tunnel with visible airflow starting to move.\n\nGLOBAL CONTINUITY:\n- primary subject: airplane wing, metallic surface, medium size, fixed horizontally\n- environment: indoor wind tunnel, gray walls, measurement instruments visible\n\nSHOT 1 (0–3s):\n- framing: wide shot, wing centered horizontally\n- lens: 35mm\n- camera movement: slow dolly from left to right\n- subject & action: airflow begins as faint smoke lines approaching the wing by 1s, smoke thickens by 2s, flow smoothly wraps around leading edge by 3s\n- environment details: wind tunnel fans visible, measurement gauges on walls, smooth concrete floor\n- lighting: soft overhead light, neutral white, minimal shadows\n- cinematic look: clean digital clarity, moderate contrast, deep focus\n\nSHOT 2 (3–7s):\n- framing: medium shot, wing leading edge and upper surface\n- lens: 50mm\n- camera movement: slow pan right to left\n- subject & action: airflow smoke intensifies, lines separate over and under wing, visible pressure difference begins\n- environment details: control panel with blinking lights, airflow sensors\n- lighting: side fill light from left, soft shadows\n- cinematic look: crisp detail, natural colors, shallow depth of field on wing surface\n\nSHOT 3 (7–10s):\n- framing: close-up on wing upper surface\n- lens: 85mm\n- camera movement: static\n- subject & action: smoke lines accelerate over upper wing surface, smooth laminar flow visible\n- environment details: textured wing surface, small rivets, slight reflections\n- lighting: directional soft light from top left\n- cinematic look: high detail, subtle film grain for texture\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow dolly left to right, then slow pan right to left, ending static close-up",
+      "audio_cue": "soft ambient wind tunnel hum with gentle airflow whoosh"
+    },
+    {
+      "scene_id": 2,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Show airflow splitting and pressure differences causing lift around the wing.\n\nGLOBAL CONTINUITY:\n- primary subject: airplane wing, metallic surface, medium size, fixed horizontally\n- environment: indoor wind tunnel, gray walls, measurement instruments visible\n\nSHOT 1 (0–3s):\n- framing: medium shot, wing profile from side\n- lens: 50mm\n- camera movement: slow tilt upward\n- subject & action: airflow smoke splits clearly above and below wing by 1s, upper flow speeds up by 2s, lower flow slower and denser by 3s\n- environment details: digital pressure readouts on side wall, airflow sensors\n- lighting: soft directional light from upper right\n- cinematic look: crisp focus, moderate contrast, natural color\n\nSHOT 2 (3–7s):\n- framing: close-up on wing underside\n- lens: 85mm\n- camera movement: slow pan left to right\n- subject & action: denser airflow under wing visible, slight turbulence near trailing edge by 5s\n- environment details: small airflow vortices visualized by smoke curls, sensor lights blinking\n- lighting: side fill light from left, soft shadows\n- cinematic look: high detail, slight film grain\n\nSHOT 3 (7–10s):\n- framing: medium wide shot, wing and airflow from front angle\n- lens: 35mm\n- camera movement: slow dolly backward\n- subject & action: airflow lines show pressure difference, wing generating visible lift force by 9s, wing slightly rising\n- environment details: wind tunnel structure, measurement instruments\n- lighting: balanced soft light from above\n- cinematic look: clear, educational style, deep focus\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow tilt up, then slow pan left to right, ending with slow dolly backward",
+      "audio_cue": "increasing wind tunnel airflow with subtle mechanical hum"
+    },
+    {
+      "scene_id": 3,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Demonstrate the Bernoulli effect with accelerated airflow over wing and resulting lift.\n\nGLOBAL CONTINUITY:\n- primary subject: airplane wing, metallic surface, medium size, fixed horizontally\n- environment: indoor wind tunnel, gray walls, measurement instruments visible\n\nSHOT 1 (0–3s):\n- framing: close-up on upper wing surface\n- lens: 85mm\n- camera movement: slow pan right to left\n- subject & action: airflow smoke accelerates over upper surface, thinning and stretching by 2s, wing surface shows slight flex by 3s\n- environment details: smooth wing texture, subtle reflections\n- lighting: soft directional light from top left\n- cinematic look: high detail, natural colors, shallow depth of field\n\nSHOT 2 (3–7s):\n- framing: medium shot, wing from side with airflow\n- lens: 50mm\n- camera movement: slow dolly forward\n- subject & action: airflow lines clearly faster above wing, slower below; wing visibly lifting by 6s\n- environment details: pressure gauges showing differential, airflow sensors\n- lighting: balanced soft light\n- cinematic look: clean, educational clarity\n\nSHOT 3 (7–10s):\n- framing: wide shot, full wing and wind tunnel\n- lens: 35mm\n- camera movement: slow crane up and back\n- subject & action: wing held stable in airflow, smoke lines smoothly flowing, clear demonstration of lift force\n- environment details: wind tunnel structure, control panels\n- lighting: soft overhead light, neutral tone\n- cinematic look: crisp, final educational frame\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow pan right to left, then slow dolly forward, finishing with slow crane up and back",
+      "audio_cue": "steady wind tunnel airflow with clear whooshing sounds"
+    }
+  ]
+}

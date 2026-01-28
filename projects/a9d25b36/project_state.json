@@ -1,0 +1,37 @@
+{
+  "project_id": "a9d25b36",
+  "user_prompt": "a man preparing to leave his apartment on a rainy morning",
+  "target_duration_s": 30,
+  "style_bible": {
+    "visual_style": "Naturalistic with muted colors, emphasizing wet surfaces and reflections; soft focus backgrounds with sharp subject detail",
+    "camera_rules": "Use mostly smooth slow dolly and pan movements; avoid abrupt cuts; maintain consistent eye-level framing",
+    "lighting_rules": "Diffused natural light simulating overcast rainy morning; soft shadows; cool color temperature",
+    "continuity_rules": "Consistent wardrobe (gray raincoat, dark jeans), hairstyle (short brown hair), and props (black umbrella, keys); maintain apartment interior with wet window and wet porch outside"
+  },
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Establish a man inside his apartment preparing to leave on a rainy morning\n\nGLOBAL CONTINUITY:\n- main subject: man with short brown hair, gray raincoat, dark jeans\n- location: small apartment living room with wet window showing rain outside, wooden floor, potted plant\n\nSHOT 1 (0–3s):\n- framing: medium shot, subject center\n- lens: 50mm\n- camera movement: slow dolly forward\n- subject & action: man stands by window looking out at rain, by 2s he picks up black umbrella from stand, by 3s he turns toward door\n- environment details: raindrops on window, umbrella stand, small table with keys\n- lighting: soft diffused light from window, cool temperature\n- cinematic look: natural film stock, low contrast, shallow depth of field\n\nSHOT 2 (3–7s):\n- framing: medium close-up, subject right side\n- lens: 50mm\n- camera movement: slow pan left\n- subject & action: man reaches for keys on table at 4s, picks them up at 5s, puts on raincoat hood by 7s\n- environment details: wet floor reflections, keys on table, coat rack\n- lighting: soft overhead light, cool tone\n- cinematic look: naturalistic with slight film grain\n\nSHOT 3 (7–10s):\n- framing: wide shot, subject left side near door\n- lens: 35mm\n- camera movement: slow dolly backward\n- subject & action: man opens door at 8s, steps out onto wet porch at 9s, pauses holding umbrella open at 10s\n- environment details: wet porch tiles, raindrops falling, outdoor plants\n- lighting: ambient soft light from outside\n- cinematic look: muted color palette, natural contrast\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow dolly forward, slow pan left, slow dolly backward",
+      "audio_cue": "soft rain sounds with distant thunder"
+    },
+    {
+      "scene_id": 2,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Show the man struggling with his umbrella as the rain intensifies outside the apartment\n\nGLOBAL CONTINUITY:\n- main subject: man with short brown hair, gray raincoat, dark jeans, holding black umbrella\n- location: apartment doorway and wet porch with rain falling\n\nSHOT 1 (0–3s):\n- framing: medium shot, subject center near door\n- lens: 50mm\n- camera movement: slow pan right\n- subject & action: man tries to open umbrella, by 2s umbrella flips inside out, by 3s he frowns and adjusts grip\n- environment details: rain falling heavily, wet porch floor, umbrella fabric\n- lighting: overcast natural light, soft shadows\n- cinematic look: natural film grain, moderate contrast\n\nSHOT 2 (3–7s):\n- framing: close-up on hands and umbrella\n- lens: 85mm\n- camera movement: static\n- subject & action: hands struggle to fix umbrella frame, by 5s umbrella partially opens correctly, by 7s rain droplets fall from umbrella edges\n- environment details: water droplets, umbrella ribs, wet hands\n- lighting: diffused cool light\n- cinematic look: sharp detail on hands, shallow depth of field\n\nSHOT 3 (7–10s):\n- framing: medium shot, subject left side\n- lens: 50mm\n- camera movement: slow dolly forward\n- subject & action: man finally opens umbrella fully at 8s, steps forward onto porch at 9s, looks up at sky at 10s\n- environment details: heavy rain, wet plants, porch tiles\n- lighting: soft natural light\n- cinematic look: muted colors, natural contrast\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow pan right, static close-up, slow dolly forward",
+      "audio_cue": "louder rain with wind gusts and umbrella fabric rustling"
+    },
+    {
+      "scene_id": 3,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: The man confidently steps out into the rain with his umbrella fully open\n\nGLOBAL CONTINUITY:\n- main subject: man with short brown hair, gray raincoat, dark jeans, holding black umbrella\n- location: wet porch and rainy street outside apartment\n\nSHOT 1 (0–3s):\n- framing: wide shot, subject center stepping off porch\n- lens: 35mm\n- camera movement: slow dolly left\n- subject & action: man steps down from porch at 1s, adjusts umbrella at 2s, begins walking forward at 3s\n- environment details: wet pavement, rain falling, street lamp\n- lighting: overcast natural light, cool tone\n- cinematic look: natural colors, soft focus background\n\nSHOT 2 (3–7s):\n- framing: medium shot, subject right side walking\n- lens: 50mm\n- camera movement: steady handheld subtle\n- subject & action: man walks steadily, umbrella held above head, raindrops splash on ground, at 7s he looks ahead\n- environment details: puddles, wet leaves, distant cars\n- lighting: diffused daylight\n- cinematic look: slight film grain, moderate contrast\n\nSHOT 3 (7–10s):\n- framing: medium close-up, subject center\n- lens: 85mm\n- camera movement: static\n- subject & action: man pauses walking at 8s, smiles slightly at 9s, umbrella tilted to shield face at 10s\n- environment details: rain droplets on umbrella, blurred background\n- lighting: soft natural light\n- cinematic look: warm film tone, shallow depth of field\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow dolly left, steady handheld subtle, static",
+      "audio_cue": "steady rain with soft footsteps on wet pavement"
+    }
+  ]
+}

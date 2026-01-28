@@ -1,0 +1,36 @@
+{
+  "project_id": "29b7dbae",
+  "user_prompt": "A cinematic Mars rescue mission",
+  "target_duration_s": 30,
+  "style_bible": {
+    "visual_style": "Cinematic sci-fi with warm red and orange hues, high contrast shadows, and realistic textures emphasizing Mars' rugged terrain and futuristic space gear.",
+    "camera_rules": "Use steady and smooth camera movements; start with wider lenses (24mm) for environment establishing shots, then move to tighter lenses (50mm, 85mm) for emotional close-ups; maintain consistent framing to highlight character focus.",
+    "continuity_rules": "Main astronaut character wears a red and white Mars suit with helmet; rocky Mars landscape with a visible rover and base camp; lighting and weather conditions consistent across scenes; no wardrobe or environment changes."
+  },
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Introduce the stranded astronaut on Mars and the rescue rover approaching.\n\nSHOT 1 (0–3s):\n- framing: Wide establishing shot\n- lens: 24mm\n- camera movement: Slow dolly forward\n- subject & action: Astronaut standing near a rocky outcrop, looking toward horizon\n- environment details: Red rocky Mars terrain with dust clouds, distant rover visible\n- lighting: Harsh sunlight casting long shadows\n- cinematic look: Warm tones with high contrast\n\nSHOT 2 (3–7s):\n- framing: Medium shot\n- lens: 50mm\n- camera movement: Slow pan right following rover movement\n- subject & action: Rover slowly approaching astronaut\n- environment details: Dust swirling around rover wheels\n- lighting: Directional sunlight with subtle fill\n- cinematic look: Crisp detail on rover and astronaut suit\n\nSHOT 3 (7–10s):\n- framing: Close-up\n- lens: 85mm\n- camera movement: Static\n- subject & action: Astronaut helmet visor reflecting rover lights\n- environment details: Dust particles in air\n- lighting: Backlit with soft rim light\n- cinematic look: Intense and dramatic\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "Starts with wide dolly, pans to rover, ends with static close-up",
+      "audio_cue": "Low ambient Mars wind with distant mechanical rover hum"
+    },
+    {
+      "scene_id": 2,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Show rising tension as the rover encounters a mechanical failure.\n\nSHOT 1 (0–3s):\n- framing: Medium close-up\n- lens: 50mm\n- camera movement: Slow handheld shake\n- subject & action: Rover control panel sparks briefly\n- environment details: Dust clouds thickening\n- lighting: Flickering light from sparks\n- cinematic look: Gritty and tense\n\nSHOT 2 (3–7s):\n- framing: Wide shot\n- lens: 24mm\n- camera movement: Quick tilt down to rover wheels stuck in rocky terrain\n- subject & action: Rover wheels spinning but stuck\n- environment details: Jagged rocks and loose soil\n- lighting: Harsh sunlight with shadows\n- cinematic look: High contrast emphasizing struggle\n\nSHOT 3 (7–10s):\n- framing: Close-up\n- lens: 85mm\n- camera movement: Slow push in\n- subject & action: Astronaut’s gloved hand gripping rover door handle tightly\n- environment details: Dust particles in air\n- lighting: Soft rim light highlighting hand and handle\n- cinematic look: Intense focus on action\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "Handheld shake, quick tilt, slow push in",
+      "audio_cue": "Mechanical grinding sounds with rising tension music"
+    },
+    {
+      "scene_id": 3,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Resolve the crisis as the astronaut manually frees the rover and prepares to leave.\n\nSHOT 1 (0–3s):\n- framing: Medium shot\n- lens: 50mm\n- camera movement: Steady track forward\n- subject & action: Astronaut using a tool to pry rocks from rover wheels\n- environment details: Rocky terrain with dust settling\n- lighting: Warm sunlight with soft shadows\n- cinematic look: Hopeful and determined\n\nSHOT 2 (3–7s):\n- framing: Wide shot\n- lens: 24mm\n- camera movement: Slow crane up\n- subject & action: Rover wheels freeing and starting to move\n- environment details: Dust lifting as rover moves\n- lighting: Bright sunlight\n- cinematic look: Triumphant and cinematic\n\nSHOT 3 (7–10s):\n- framing: Close-up\n- lens: 85mm\n- camera movement: Static\n- subject & action: Astronaut helmet visor reflecting Mars horizon and rover lights driving away\n- environment details: Clear sky with faint stars\n- lighting: Soft backlight with warm tones\n- cinematic look: Calm and resolved\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "Steady track, slow crane, static close-up",
+      "audio_cue": "Rising hopeful orchestral music with rover engine starting"
+    }
+  ]
+}

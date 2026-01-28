@@ -1,0 +1,37 @@
+{
+  "project_id": "af0137a0",
+  "user_prompt": "explain bernoulli’s principle using an airplane wing and airflow visualization",
+  "target_duration_s": 30,
+  "style_bible": {
+    "visual_style": "Realistic with clear, sharp details emphasizing aerodynamic shapes and airflow visualization using colored smoke or digital flow lines",
+    "camera_rules": "Use smooth, continuous camera movements with gradual zooms and pans to maintain spatial orientation and avoid jump cuts",
+    "lighting_rules": "Soft, natural daylight with directional lighting from above-left to enhance contours and flow visualization, consistent across scenes",
+    "continuity_rules": "Maintain the airplane wing as the primary subject in a consistent sky environment with subtle cloud background; airflow visualization style remains uniform"
+  },
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Introduce a stationary airplane wing with airflow beginning to move around it.\n\nGLOBAL CONTINUITY:\n- primary subject: a medium-sized airplane wing, smooth metallic surface, 3 meters span\n- environment: clear blue sky with light wispy clouds, calm weather\n\nSHOT 1 (0–3s):\n- framing: medium shot, wing centered horizontally\n- lens: 35mm\n- camera movement: slow dolly forward\n- subject & action: wing is stationary, airflow lines start appearing at leading edge\n- environment details: light clouds, blue sky gradient, subtle horizon line\n- lighting: soft directional light from top-left, neutral color temp\n- cinematic look: clean film stock, moderate contrast, shallow depth of field focusing on wing leading edge\n\nSHOT 2 (3–7s):\n- framing: medium-close, wing leading edge left of frame\n- lens: 50mm\n- camera movement: slow pan right following airflow\n- subject & action: colored airflow lines (blue and red) begin to flow smoothly over and under the wing\n- environment details: clouds slightly blurred due to camera movement, sky remains bright\n- lighting: consistent soft directional lighting\n- cinematic look: natural colors, slight vignette to focus on airflow\n\nSHOT 3 (7–10s):\n- framing: close-up on wing upper surface\n- lens: 85mm\n- camera movement: static\n- subject & action: airflow lines clearly separate above and below wing, showing faster flow on top\n- environment details: wing texture visible, sky softly blurred\n- lighting: directional light highlights wing curvature\n- cinematic look: sharp focus on airflow lines, subtle film grain\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow dolly forward, then slow pan right, ending static close-up",
+      "audio_cue": "Narrator introduces Bernoulli’s principle and explains the airplane wing's role in generating lift by airflow."
+    },
+    {
+      "scene_id": 2,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Show airflow accelerating over the wing and pressure differences forming.\n\nGLOBAL CONTINUITY:\n- primary subject: same airplane wing, metallic surface, 3 meters span\n- environment: clear blue sky with light wispy clouds, calm weather\n\nSHOT 1 (0–3s):\n- framing: medium shot, wing angled slightly upward\n- lens: 35mm\n- camera movement: slow tilt upward\n- subject & action: airflow lines intensify, blue lines above wing speed up and narrow\n- environment details: clouds in background, sunlit sky\n- lighting: soft directional light from top-left, warm color temp\n- cinematic look: enhanced contrast to emphasize flow speed\n\nSHOT 2 (3–7s):\n- framing: medium-close, wing upper surface dominant\n- lens: 50mm\n- camera movement: slow dolly right\n- subject & action: visible pressure zones appear as subtle color gradients (blue low pressure above, red higher pressure below)\n- environment details: blurred clouds, bright sky\n- lighting: consistent soft lighting\n- cinematic look: natural colors with slight saturation boost\n\nSHOT 3 (7–10s):\n- framing: close-up on wing trailing edge\n- lens: 85mm\n- camera movement: slow pan left\n- subject & action: airflow lines converge smoothly behind wing, showing lift generation\n- environment details: wing texture sharp, sky softly blurred\n- lighting: directional light highlights trailing edge\n- cinematic look: crisp focus with shallow depth of field\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow tilt upward, slow dolly right, slow pan left",
+      "audio_cue": "Narrator explains how airflow speed differences create pressure variations that generate lift on the wing."
+    },
+    {
+      "scene_id": 3,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Demonstrate the resulting lift force lifting the wing with airflow continuing smoothly.\n\nGLOBAL CONTINUITY:\n- primary subject: same airplane wing, metallic surface, 3 meters span\n- environment: clear blue sky with light wispy clouds, calm weather\n\nSHOT 1 (0–3s):\n- framing: medium shot, wing slightly tilted upward\n- lens: 35mm\n- camera movement: slow crane up\n- subject & action: wing begins to lift slowly, airflow lines stable and smooth\n- environment details: sky with soft clouds, horizon faint\n- lighting: soft directional light from top-left, neutral color temp\n- cinematic look: balanced contrast, natural colors\n\nSHOT 2 (3–7s):\n- framing: medium-close, wing center\n- lens: 50mm\n- camera movement: slow dolly backward\n- subject & action: wing rises steadily, airflow lines remain continuous and clear\n- environment details: clouds in background, sky bright\n- lighting: consistent soft lighting\n- cinematic look: sharp focus on wing and flow lines\n\nSHOT 3 (7–10s):\n- framing: wide shot, wing fully lifted in frame\n- lens: 24mm\n- camera movement: slow pan left\n- subject & action: wing held aloft by airflow, final clear frame showing lift effect\n- environment details: expansive sky, soft clouds\n- lighting: directional light enhances wing silhouette\n- cinematic look: cinematic wide shot with natural colors\n\nAVOID: text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "negative_prompt": "text, logos, subtitles, watermarks, extra limbs, distorted faces, flicker, glitch",
+      "camera": "slow crane up, slow dolly backward, slow pan left",
+      "audio_cue": "Narrator concludes by describing how Bernoulli’s principle results in lift that allows the wing to rise."
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "project_id": "80e24f34",
+  "user_prompt": "Explain how a bicycle gear system works",
+  "target_duration_s": 20,
+  "style_bible": {
+    "visual_style": "Clean educational cutaway diagrams with realistic bicycle parts, simplified colors, high contrast, no text clutter.",
+    "camera_rules": "Slow, steady camera moves only; no sudden cuts; keep main mechanism centered.",
+    "lighting_rules": "Even studio lighting with soft shadows; metallic highlights on gears and chain.",
+    "continuity_rules": "Bicycle orientation stays consistent left-to-right; drivetrain remains on right side across frames."
+  },
+  "clips": [],
+  "frames": [
+    {
+      "frame_id": 1,
+      "duration_s": 3,
+      "image_prompt": "Side-view bicycle without rider, centered in frame, wheels visible left and right. Drivetrain on right side highlighted. Rear wheel rotates slowly clockwise, front wheel rotates in sync. Subtle arrows near wheels indicating rotation. Background neutral light gray. Components labeled with small icons but no text.",
+      "animation_type": "hold",
+      "on_screen_text_overlay": "Bicycle Gear System",
+      "continuity_note": "Camera stays wide; next frame zooms into drivetrain area on right side.",
+      "environment_details": [
+        "studio backdrop",
+        "clean floor reflection"
+      ],
+      "lighting": "Soft studio lighting with gentle reflections on metal parts.",
+      "cinematic_look": "Educational, crisp, minimal depth of field."
+    },
+    {
+      "frame_id": 2,
+      "duration_s": 3,
+      "image_prompt": "Zoomed-in cutaway of drivetrain: front chainrings on left, chain running horizontally, rear cassette on right. Chain links visibly moving along the path. Arrows along chain show motion direction left-to-right on top, right-to-left on bottom.",
+      "animation_type": "ken_burns_zoom_in",
+      "on_screen_text_overlay": "Power Flow",
+      "continuity_note": "Chain and gears remain centered; next frame isolates front chainrings.",
+      "environment_details": [
+        "mechanical cutaway style",
+        "neutral gray background"
+      ],
+      "lighting": "Bright even lighting emphasizing chain motion.",
+      "cinematic_look": "Technical close-up with smooth motion emphasis."
+    },
+    {
+      "frame_id": 3,
+      "duration_s": 3,
+      "image_prompt": "Front chainrings enlarged on left side of frame: one large ring and one small ring. Chain alternates between rings with a sliding animation. Curved arrows show rotation speed: larger ring with fewer arrows, smaller ring with faster arrows.",
+      "animation_type": "hold",
+      "on_screen_text_overlay": "Front Gears",
+      "continuity_note": "Front chainrings stay fixed; camera pans right toward rear cassette next.",
+      "environment_details": [
+        "cutaway drivetrain",
+        "floating arrows"
+      ],
+      "lighting": "Soft highlights on teeth edges.",
+      "cinematic_look": "Clear mechanical emphasis."
+    },
+    {
+      "frame_id": 4,
+      "duration_s": 3,
+      "image_prompt": "Rear cassette fills right side: stack of small and large cogs. Chain shifts smoothly up and down the stack. Speed lines around wheel indicate faster spin on smaller cog, slower spin on larger cog.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Rear Gears",
+      "continuity_note": "Cassette remains in view; next frame adds force and speed arrows.",
+      "environment_details": [
+        "rear wheel hub",
+        "metallic gear textures"
+      ],
+      "lighting": "Directional light showing depth between cogs.",
+      "cinematic_look": "Mechanical macro look."
+    },
+    {
+      "frame_id": 5,
+      "duration_s": 3,
+      "image_prompt": "Combined view of front and rear gears. Two scenarios split diagonally: big front ring to small rear cog with long arrows labeled by icons showing speed; small front ring to large rear cog with thick arrows showing force. Arrows animate pulsing to show change.",
+      "animation_type": "hold",
+      "on_screen_text_overlay": "Speed vs Effort",
+      "continuity_note": "Split view collapses into single drivetrain view for shifting explanation.",
+      "environment_details": [
+        "diagram split overlay",
+        "neutral backdrop"
+      ],
+      "lighting": "Balanced lighting across both scenarios.",
+      "cinematic_look": "Clear comparative visualization."
+    },
+    {
+      "frame_id": 6,
+      "duration_s": 3,
+      "image_prompt": "Close-up of rear derailleur and chain. Derailleur arm pivots inward and outward. Chain jumps between cogs in sync. Small animated guide arrows show lateral chain movement.",
+      "animation_type": "ken_burns_zoom_in",
+      "on_screen_text_overlay": "Shifting Gears",
+      "continuity_note": "Derailleur remains center; next frame zooms out to full system.",
+      "environment_details": [
+        "spring-loaded derailleur",
+        "visible jockey wheels"
+      ],
+      "lighting": "Focused light on moving joints.",
+      "cinematic_look": "Precise mechanical action."
+    },
+    {
+      "frame_id": 7,
+      "duration_s": 2,
+      "image_prompt": "Return to full bicycle side view. Wheels spin steadily. Simple animated arrows from pedals to rear wheel summarize power transfer. All motion smooth and continuous.",
+      "animation_type": "ken_burns_zoom_out",
+      "on_screen_text_overlay": "Efficient Riding",
+      "continuity_note": "Final stable wide shot; motion gradually settles.",
+      "environment_details": [
+        "studio background",
+        "subtle floor shadow"
+      ],
+      "lighting": "Even, calm lighting.",
+      "cinematic_look": "Confident educational wrap-up."
+    }
+  ],
+  "full_script_20s": "This explainer shows how bicycle gears change pedaling effort by moving the chain between different-sized gears, altering the speed and force sent to the rear wheel."
+}

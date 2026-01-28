@@ -1,0 +1,6 @@
+file 'C:\Users\a.elkassas\OneDrive - Stamtech S.r.l\Documenti\General documents\Eduvidual\Coding\ai_video_agent\projects\42f5499e\clips\clip_001.mp4'
+file 'C:\Users\a.elkassas\OneDrive - Stamtech S.r.l\Documenti\General documents\Eduvidual\Coding\ai_video_agent\projects\42f5499e\clips\clip_002.mp4'
+file 'C:\Users\a.elkassas\OneDrive - Stamtech S.r.l\Documenti\General documents\Eduvidual\Coding\ai_video_agent\projects\42f5499e\clips\clip_003.mp4'
+file 'C:\Users\a.elkassas\OneDrive - Stamtech S.r.l\Documenti\General documents\Eduvidual\Coding\ai_video_agent\projects\42f5499e\clips\clip_004.mp4'
+file 'C:\Users\a.elkassas\OneDrive - Stamtech S.r.l\Documenti\General documents\Eduvidual\Coding\ai_video_agent\projects\42f5499e\clips\clip_005.mp4'
+file 'C:\Users\a.elkassas\OneDrive - Stamtech S.r.l\Documenti\General documents\Eduvidual\Coding\ai_video_agent\projects\42f5499e\clips\clip_006.mp4'

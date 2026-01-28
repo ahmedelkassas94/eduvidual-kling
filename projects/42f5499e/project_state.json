@@ -1,0 +1,105 @@
+{
+  "project_id": "42f5499e",
+  "user_prompt": "Explain how photosynthesis works in plants",
+  "target_duration_s": 20,
+  "style_bible": {
+    "visual_style": "Clean, colorful educational illustration with simplified shapes, clear arrows, and minimal labels; realistic plants but diagram-like clarity.",
+    "camera_rules": "Only simple holds, pans, or gentle Ken Burns moves; camera motion must reinforce focus on the main subject without shifting object relationships.",
+    "lighting_rules": "Bright, natural daylight with high contrast between key elements and background; no dramatic shadows.",
+    "continuity_rules": "Plant species, colors, and left-right orientation remain consistent across frames; transitions feel like zooming into or out from the same plant system."
+  },
+  "clips": [],
+  "frames": [
+    {
+      "frame_id": 1,
+      "duration_s": 3,
+      "image_prompt": "Wide view of a single green plant centered in frame, growing from brown soil at the bottom. Bright yellow sun in the upper left with straight arrows pointing from sun to leaves. Blue arrows from air toward leaves labeled as carbon dioxide icons, and blue arrows from soil into roots showing water. Plant remains static and clearly readable.",
+      "animation_type": "hold",
+      "on_screen_text_overlay": "Plants make their food",
+      "continuity_note": "The same plant stays centered; next frame zooms into one leaf on the right side.",
+      "environment_details": [
+        "blue sky background",
+        "simple soil cross-section",
+        "no other plants nearby"
+      ],
+      "lighting": "Bright even daylight",
+      "cinematic_look": "Flat educational illustration with crisp edges"
+    },
+    {
+      "frame_id": 2,
+      "duration_s": 3,
+      "image_prompt": "Close-up of a single leaf filling most of the frame, angled slightly to the right. Inside the leaf, simplified green chloroplasts are shown as oval shapes. Yellow light rays enter from the top left and point directly to the chloroplasts. Leaf veins are visible but static.",
+      "animation_type": "ken_burns_zoom_in",
+      "on_screen_text_overlay": "Light energy captured",
+      "continuity_note": "Leaf orientation stays the same; next frame pulls attention downward to the roots supplying water.",
+      "environment_details": [
+        "soft green background",
+        "leaf texture veins",
+        "sunlight rays"
+      ],
+      "lighting": "Bright focused highlights on leaf",
+      "cinematic_look": "Macro-style educational diagram"
+    },
+    {
+      "frame_id": 3,
+      "duration_s": 3,
+      "image_prompt": "Split view: bottom half shows roots in brown soil, top half shows the same leaf. Blue water droplets and arrows move upward from roots through the stem toward the leaf. All plant parts remain vertically aligned and centered.",
+      "animation_type": "pan_up",
+      "on_screen_text_overlay": "Water from roots",
+      "continuity_note": "Water arrows continue upward; next frame removes soil focus and centers on the leaf surface.",
+      "environment_details": [
+        "layered soil texture",
+        "thin stem cross-section",
+        "consistent plant color"
+      ],
+      "lighting": "Even daylight from above",
+      "cinematic_look": "Clear instructional cutaway"
+    },
+    {
+      "frame_id": 4,
+      "duration_s": 4,
+      "image_prompt": "Leaf surface close-up with tiny openings (stomata) shown along the bottom edge. Gray-blue arrows labeled as carbon dioxide icons move from the air into the leaf. Yellow light arrows still enter from the top left, while internal green chloroplasts remain visible.",
+      "animation_type": "hold",
+      "on_screen_text_overlay": "Carbon dioxide enters",
+      "continuity_note": "Chloroplasts stay in the same positions; next frame focuses deeper inside the leaf.",
+      "environment_details": [
+        "soft sky gradient background",
+        "leaf surface texture",
+        "small pore openings"
+      ],
+      "lighting": "Bright and neutral",
+      "cinematic_look": "Scientific illustration style"
+    },
+    {
+      "frame_id": 5,
+      "duration_s": 4,
+      "image_prompt": "Inside the leaf, chloroplasts are now larger and centered. Arrows from light, water, and carbon dioxide converge into a chloroplast, which produces small white sugar cube icons that collect to the right side of the frame.",
+      "animation_type": "ken_burns_zoom_in",
+      "on_screen_text_overlay": "Sugar is produced",
+      "continuity_note": "Sugar icons remain; next frame pulls back outward to show the whole leaf releasing oxygen.",
+      "environment_details": [
+        "soft green internal leaf background",
+        "simple arrow graphics",
+        "floating sugar icons"
+      ],
+      "lighting": "Bright with emphasis on chloroplasts",
+      "cinematic_look": "Clean infographic focus"
+    },
+    {
+      "frame_id": 6,
+      "duration_s": 3,
+      "image_prompt": "Medium view of the full leaf again, attached to the plant. White arrows labeled with oxygen icons move from the leaf into the surrounding air. The sun remains in the upper left, plant centered and stable.",
+      "animation_type": "ken_burns_zoom_out",
+      "on_screen_text_overlay": "Oxygen released to air",
+      "continuity_note": "Final frame resolves by returning to the full plant view introduced at the start.",
+      "environment_details": [
+        "blue sky",
+        "still air around leaf",
+        "consistent plant shape"
+      ],
+      "lighting": "Bright daylight",
+      "cinematic_look": "Balanced educational closing shot"
+    }
+  ],
+  "full_script_20s": "The video introduces a green plant and shows how it uses sunlight, water, and carbon dioxide to make food. It zooms into a leaf to show light being captured, follows water moving up from the roots, shows carbon dioxide entering the leaf, then explains how sugar is made inside the leaf and oxygen is released into the air."
+}

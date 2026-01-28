@@ -1,0 +1,28 @@
+{
+  "project_id": "f80c4b2f",
+  "user_prompt": "Describe Bernoulli’s principle through an airplane wing example in depth.",
+  "target_duration_s": 20,
+  "style_bible": {
+    "visual_style": "Clean educational CGI, realistic airplane wing with visible airflow streamlines, minimalistic overlays, neutral sky backdrop.",
+    "camera_rules": "Stable, readable compositions; avoid rapid motion; overlays only during static explanatory hold (no camera motion).",
+    "lighting_rules": "Soft directional daylight from upper-left, consistent across scenes, no dramatic shadows.",
+    "continuity_rules": "Same wing, same sky, same left-to-right airflow direction; Scene 2 begins exactly on Scene 1 final frame."
+  },
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Introduce Bernoulli’s principle by showing airflow speed differences over an airplane wing. GLOBAL CONTINUITY: Primary subject is a single airplane wing viewed from the side; environment is open blue sky; camera maintains left-to-right screen direction, mid-distance; explanatory state builds calmly.\nSHOT 1 (0–3s): framing: medium-wide side view of wing; lens: 35mm; camera movement: slow dolly; subject & action: by 1s airflow lines appear, by 2s they stabilize, by 3s wing cruises smoothly; on-screen text overlay: none; continuity note: airflow direction established for next shot; environment details: clear sky, faint clouds, distant horizon; lighting: soft daylight from upper-left; cinematic look: crisp, moderate depth of field.\nSHOT 2 (3–7s): framing: same composition, slightly closer; lens: 50mm; camera movement: static explanatory hold (no camera motion); subject & action: airflow accelerates over curved top, calm and steady for reading; on-screen text overlay: \"Curved top speeds flow\"; continuity note: faster top airflow continues into next hold; environment details: blue sky gradient, subtle atmospheric haze; lighting: unchanged soft daylight; cinematic look: clean educational clarity.\nSHOT 3 (7–10s): framing: unchanged; lens: 50mm; camera movement: static explanatory hold (no camera motion); subject & action: pressure visualization subtly fades in above wing, motion stable; on-screen text overlay: \"Faster air, lower pressure\"; continuity note: pressure shading remains into Scene 2; environment details: sky, airflow lines, wing surface; lighting: consistent soft light; cinematic look: smooth gradients. FINAL FRAME HANDOFF: Wing centered, airflow left-to-right, low-pressure shading visible above wing.",
+      "negative_prompt": "logos, watermarks, brand marks, extra limbs, distorted faces, flicker, glitch, people, human, face, hands, cockpit, unreadable tiny text",
+      "camera": "Side-on tracking perspective, stable altitude"
+    },
+    {
+      "scene_id": 2,
+      "duration_s": 10,
+      "prompt": "SCENE INTENT: Show how pressure difference creates lift and how angle affects it. GLOBAL CONTINUITY: Begins exactly from Scene 1 final frame with same wing, sky, airflow, camera distance, and screen direction; explanatory state continues.\nSHOT 1 (0–3s): framing: identical to previous final frame; lens: 50mm; camera movement: slow dolly; subject & action: by 2s lift arrow gently rises from wing, motion calm; on-screen text overlay: none; continuity note: lift arrow grows clearer for next hold; environment details: blue sky, airflow lines, pressure shading; lighting: unchanged daylight; cinematic look: smooth educational CGI.\nSHOT 2 (3–7s): framing: same; lens: 50mm; camera movement: static explanatory hold (no camera motion); subject & action: lift arrow steady, pressure difference clearly visible; on-screen text overlay: \"Pressure difference creates lift\"; continuity note: lift arrow remains for final shot; environment details: sky gradient, wing texture, airflow lines; lighting: soft and even; cinematic look: high clarity.\nSHOT 3 (7–10s): framing: same with slight emphasis on leading edge; lens: 35mm; camera movement: static explanatory hold (no camera motion); subject & action: wing angle subtly tilts by 1–2 degrees, airflow adjusts smoothly, stable for reading; on-screen text overlay: \"Angle affects lift\"; continuity note: ends explanation cleanly with stable image; environment details: sky, airflow curvature, wing edge; lighting: consistent daylight; cinematic look: polished educational finish. FINAL FRAME HANDOFF: Wing angled slightly upward, airflow and lift arrow clearly visible, ready to end.",
+      "negative_prompt": "logos, watermarks, brand marks, extra limbs, distorted faces, flicker, glitch, people, human, face, hands, cockpit, unreadable tiny text",
+      "camera": "Locked side view, same as Scene 1"
+    }
+  ],
+  "full_script": "0–3s: Establish airplane wing in flight with smooth airflow. 3–7s: Hold to show faster airflow over curved top; overlay appears: \"Curved top speeds flow\". 7–10s: Second hold clarifies pressure effect; overlay appears: \"Faster air, lower pressure\". 10–13s: Continue from same frame, reveal pressure difference with subtle color shading. 13–17s: Hold to explain lift creation; overlay appears: \"Pressure difference creates lift\". 17–20s: Final hold shows slight wing angle change affecting airflow; overlay appears: \"Angle affects lift\"."
+}

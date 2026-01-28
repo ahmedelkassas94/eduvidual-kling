@@ -1,0 +1,252 @@
+{
+  "project_id": "3797f5ac",
+  "user_prompt": "A cinematic Mars rescue mission",
+  "target_duration_s": 180,
+  "style_bible": {
+    "visual_style": "cinematic, realistic, dramatic lighting",
+    "camera_rules": "wide establishes, medium action, close emotional beats",
+    "continuity_rules": "consistent characters, consistent environment, consistent color palette"
+  },
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_s": 6,
+      "prompt": "Scene 1: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "slow push-in",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 2,
+      "duration_s": 6,
+      "prompt": "Scene 2: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "handheld medium",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 3,
+      "duration_s": 6,
+      "prompt": "Scene 3: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "static close-up",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 4,
+      "duration_s": 6,
+      "prompt": "Scene 4: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "slow push-in",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 5,
+      "duration_s": 6,
+      "prompt": "Scene 5: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "handheld medium",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 6,
+      "duration_s": 6,
+      "prompt": "Scene 6: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "static close-up",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 7,
+      "duration_s": 6,
+      "prompt": "Scene 7: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "slow push-in",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 8,
+      "duration_s": 6,
+      "prompt": "Scene 8: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "handheld medium",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 9,
+      "duration_s": 6,
+      "prompt": "Scene 9: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "static close-up",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 10,
+      "duration_s": 6,
+      "prompt": "Scene 10: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "slow push-in",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 11,
+      "duration_s": 6,
+      "prompt": "Scene 11: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "handheld medium",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 12,
+      "duration_s": 6,
+      "prompt": "Scene 12: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "static close-up",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 13,
+      "duration_s": 6,
+      "prompt": "Scene 13: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "slow push-in",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 14,
+      "duration_s": 6,
+      "prompt": "Scene 14: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "handheld medium",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 15,
+      "duration_s": 6,
+      "prompt": "Scene 15: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "static close-up",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 16,
+      "duration_s": 6,
+      "prompt": "Scene 16: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "slow push-in",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 17,
+      "duration_s": 6,
+      "prompt": "Scene 17: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "handheld medium",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 18,
+      "duration_s": 6,
+      "prompt": "Scene 18: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "static close-up",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 19,
+      "duration_s": 6,
+      "prompt": "Scene 19: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "slow push-in",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 20,
+      "duration_s": 6,
+      "prompt": "Scene 20: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "handheld medium",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 21,
+      "duration_s": 6,
+      "prompt": "Scene 21: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "static close-up",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 22,
+      "duration_s": 6,
+      "prompt": "Scene 22: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "slow push-in",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 23,
+      "duration_s": 6,
+      "prompt": "Scene 23: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "handheld medium",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 24,
+      "duration_s": 6,
+      "prompt": "Scene 24: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "static close-up",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 25,
+      "duration_s": 6,
+      "prompt": "Scene 25: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "slow push-in",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 26,
+      "duration_s": 6,
+      "prompt": "Scene 26: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "handheld medium",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 27,
+      "duration_s": 6,
+      "prompt": "Scene 27: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "static close-up",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 28,
+      "duration_s": 6,
+      "prompt": "Scene 28: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "slow push-in",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 29,
+      "duration_s": 6,
+      "prompt": "Scene 29: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "handheld medium",
+      "audio_cue": "ambient cinematic pad"
+    },
+    {
+      "scene_id": 30,
+      "duration_s": 6,
+      "prompt": "Scene 30: A cinematic Mars rescue mission. Visual: cinematic shot with clear subject and setting.",
+      "negative_prompt": "text, watermark, logo, blurry, lowres",
+      "camera": "static close-up",
+      "audio_cue": "ambient cinematic pad"
+    }
+  ]
+}
