@@ -1,0 +1,99 @@
+{
+  "project_id": "df926ba7",
+  "user_prompt": "Explain quantum entanglement using visual diagrams, mathematical representations, and particle interactions. Professional academic style for university students.",
+  "target_duration_s": 20,
+  "style_bible": {
+    "visual_style": "Professional, sophisticated, cinematic quality suitable for university-level academic content. Clean, modern, visually engaging. Think documentary/science channel aesthetic, not cartoon or children's animation. Suitable for explaining advanced, technical, or abstract concepts.",
+    "camera_rules": "ONE CONTINUOUS CAMERA MOVE: slow pan left-to-right at a consistent speed, virtual 35mm lens, maintaining stable horizon and framing throughout all 20 seconds.",
+    "lighting_rules": "Professional, cinematic lighting with cool neutral tones, high contrast for mathematical symbols and particle visuals, no dramatic shadows that obscure details.",
+    "continuity_rules": "All frames are keyframes from the same continuous shot. Camera pans smoothly left-to-right with no cuts. Objects retain spatial relationships relative to the environment while internal elements animate naturally."
+  },
+  "clips": [],
+  "frames": [
+    {
+      "frame_id": 1,
+      "duration_s": 3,
+      "image_prompt": "Left side of a dark, minimal scientific visualization space. In the center-left foreground, a single glowing quantum particle represented as a luminous sphere with a subtle wavefunction cloud oscillating around it. Semi-transparent sinusoidal probability waves ripple outward. Thin vector arrows rotate slowly around the particle, indicating spin superposition. Faint mathematical notation floats in the background.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Quantum superposition state",
+      "continuity_note": "This is the start of the continuous shot. Camera begins at the far left of the visualization space, framing a single particle. In the next frame, the camera continues panning right, revealing an interaction region while the original particle remains visible on the left.",
+      "environment_details": [
+        "Dark neutral gradient background",
+        "Subtle grid suggesting abstract space"
+      ],
+      "lighting": "Cool, even illumination emphasizing the particle glow and wave patterns.",
+      "cinematic_look": "Clean, high-contrast scientific visualization with depth and soft bloom."
+    },
+    {
+      "frame_id": 2,
+      "duration_s": 3,
+      "image_prompt": "As the camera pans right, a second identical quantum particle appears to the right of the first. A bright interaction zone forms between them, shown as intersecting wavefunctions. Curved arrows connect both particles, pulsing rhythmically. Mathematical symbols like |ψ⟩ briefly fade in near the interaction region.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Entangling interaction",
+      "continuity_note": "Camera has moved slightly right, keeping both particles in view. Their relative positions remain fixed while connecting arrows pulse to indicate interaction. Next frame continues the same pan, shifting focus toward the paired system.",
+      "environment_details": [
+        "Same abstract space",
+        "Floating mathematical glyphs"
+      ],
+      "lighting": "Slightly intensified glow at the interaction region.",
+      "cinematic_look": "Smooth motion, restrained visual effects, academic tone."
+    },
+    {
+      "frame_id": 3,
+      "duration_s": 4,
+      "image_prompt": "Camera now centers on the entangled pair. Both particles are linked by a luminous line that gently oscillates. Behind them, a clean mathematical panel shows a simplified equation: |ψ⟩ = (|01⟩ + |10⟩)/√2, with terms softly highlighting in sequence. Probability waves around both particles synchronize.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Shared quantum state",
+      "continuity_note": "Camera continues panning right, bringing the entangled pair and equation to the center. The particles remain locked in position relative to each other. Next frame moves further right, stretching the visual distance between particles.",
+      "environment_details": [
+        "Floating equation panel",
+        "Consistent dark academic backdrop"
+      ],
+      "lighting": "Balanced lighting ensuring equation readability.",
+      "cinematic_look": "Documentary-style clarity with subtle motion graphics."
+    },
+    {
+      "frame_id": 4,
+      "duration_s": 4,
+      "image_prompt": "As the camera advances right, the two particles appear farther apart within the same continuous space. The luminous connection stretches but does not break. Distance markers slide outward beneath the particles, increasing numerically. The oscillation of both particles remains synchronized.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Nonlocal correlation",
+      "continuity_note": "Camera has panned right, increasing apparent separation while preserving the connecting link. Distance indicators animate smoothly. Next frame continues the pan, introducing measurement on one particle.",
+      "environment_details": [
+        "Expanding spatial grid",
+        "Minimal numeric distance indicators"
+      ],
+      "lighting": "Consistent cool lighting, emphasizing the stretched connection.",
+      "cinematic_look": "Wide, spacious composition with precise visual cues."
+    },
+    {
+      "frame_id": 5,
+      "duration_s": 3,
+      "image_prompt": "Further right, a measurement axis appears next to the left particle, represented by a vertical arrow and rotating basis vectors. Upon contact, the particle's wavefunction collapses into a defined state, shown by the probability cloud shrinking. Instantly, the distant particle mirrors the change.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Measurement collapse",
+      "continuity_note": "Camera continues smoothly right. Measurement elements appear without changing camera angle. The distant particle responds instantly, maintaining spatial continuity. Next frame pans to a summary visualization.",
+      "environment_details": [
+        "Measurement axis graphics",
+        "Persistent abstract space"
+      ],
+      "lighting": "Slight highlight on measurement axis and collapsed state.",
+      "cinematic_look": "Precise, restrained animation emphasizing causality."
+    },
+    {
+      "frame_id": 6,
+      "duration_s": 3,
+      "image_prompt": "At the far right of the space, both particles are now small in frame, still connected by a thin luminous line. A simplified diagram overlays the scene, showing correlation arrows between outcomes. Background equations fade softly, leaving a clear conceptual visualization.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Entanglement preserves correlations",
+      "continuity_note": "Camera reaches the rightmost extent of the pan, completing the continuous movement. All elements maintain their relationships as motion gently settles, concluding the single-take shot.",
+      "environment_details": [
+        "Fading mathematical background",
+        "Consistent minimal scientific environment"
+      ],
+      "lighting": "Even, calm lighting to signal conclusion.",
+      "cinematic_look": "Elegant, resolved final composition with academic polish."
+    }
+  ],
+  "full_script_20s": "A continuous visual explanation showing how two quantum particles share a single mathematical state, remain correlated across distance, and exhibit measurement-dependent outcomes."
+}

@@ -3,6 +3,7 @@ import base64
 from pathlib import Path
 import requests
 from urllib.parse import quote
+from requests.exceptions import ChunkedEncodingError
 
 
 def frame_to_public_url(frame_path: Path) -> str:
@@ -138,10 +139,26 @@ def _upload_to_imgbb(frame_path: Path, api_key: str) -> str:
 
 
 def _assert_public_image_url(url: str) -> None:
-    try:
-        r = requests.get(url, timeout=30)
-    except Exception as e:
-        raise RuntimeError(f"Public URL not reachable: {url} | {e}")
+    """
+    Best-effort validation that the URL is publicly reachable and returns an image.
+    Be tolerant of transient ChunkedEncodingError issues from some CDNs (e.g. ImgBB).
+    """
+    last_exc: Exception | None = None
+
+    for attempt in range(3):
+        try:
+            r = requests.get(url, timeout=30)
+            break
+        except ChunkedEncodingError as e:
+            last_exc = e
+            print(f"⚠️ ChunkedEncodingError while validating URL (attempt {attempt+1}/3): {url} | {e}")
+            continue
+        except Exception as e:
+            raise RuntimeError(f"Public URL not reachable: {url} | {e}")
+    else:
+        # If we only saw ChunkedEncodingError, assume the URL is basically fine and let DashScope decide.
+        print(f"⚠️ Giving up validation after repeated ChunkedEncodingError; assuming URL is OK: {url}")
+        return
 
     if r.status_code != 200:
         raise RuntimeError(f"Public URL not accessible (HTTP {r.status_code}): {url} | body={r.text[:300]}")

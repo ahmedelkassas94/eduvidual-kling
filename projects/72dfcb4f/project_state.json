@@ -1,0 +1,119 @@
+{
+  "project_id": "72dfcb4f",
+  "user_prompt": "Explain Bernoulli's principle and lift using the airplane wing example. Show how air flows over and under the wing, pressure differences, and how this creates lift. Professional academic style for university students.",
+  "target_duration_s": 20,
+  "style_bible": {
+    "visual_style": "Professional, sophisticated, cinematic quality suitable for university-level academic content. Clean, modern, visually engaging. Think documentary/science channel aesthetic, not cartoon or children's animation. Suitable for explaining advanced, technical, or abstract concepts.",
+    "camera_rules": "ONE CONTINUOUS CAMERA MOVE: slow pan left-to-right at an effective 35mm lens, constant speed and height, maintaining consistent framing of the airplane wing cross-section throughout all 20 seconds.",
+    "lighting_rules": "Professional, cinematic lighting with soft key and subtle rim light to clearly reveal airflow particles, pressure fields, and wing geometry without dramatic shadows.",
+    "continuity_rules": "All frames are keyframes from the same continuous shot. The camera never cuts or jumps, panning smoothly left-to-right. The wing, airflow particles, arrows, and labels maintain spatial relationships while evolving naturally."
+  },
+  "clips": [],
+  "frames": [
+    {
+      "frame_id": 1,
+      "duration_s": 3,
+      "image_prompt": "Left side of frame shows undisturbed airflow particles moving rightward as small white dots. Center-right shows the leading edge of a gray airplane wing cross-section in a wind-tunnel-like environment. Thin arrows indicate uniform incoming air velocity. Subtle grid lines in background suggest measurement space.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Bernoulli’s principle",
+      "continuity_note": "This is the start of the continuous shot. Camera begins left of the wing, panning right toward the leading edge. Airflow particles move steadily rightward. Next frame continues the same pan, revealing the point where air divides.",
+      "environment_details": [
+        "Neutral wind tunnel background",
+        "Faint measurement grid"
+      ],
+      "lighting": "Soft, even lighting highlighting airflow particles and wing edge.",
+      "cinematic_look": "Clean, high-contrast scientific visualization with shallow atmospheric depth.",
+      "narration_text": "Bernoulli’s principle relates fluid speed to pressure."
+    },
+    {
+      "frame_id": 2,
+      "duration_s": 3,
+      "image_prompt": "Camera now centered on the wing’s leading edge. Airflow particles split smoothly above and below the wing. Two sets of arrows curve upward and downward respectively, indicating diverging streamlines.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Flow separation",
+      "continuity_note": "Camera has panned slightly right to center the leading edge. The wing remains fixed in space; airflow particles divide naturally. Next frame continues panning to follow the upper surface.",
+      "environment_details": [
+        "Same wind tunnel",
+        "Consistent grid background"
+      ],
+      "lighting": "Consistent soft lighting, slightly brighter on leading edge.",
+      "cinematic_look": "Precision-engineered academic visualization.",
+      "narration_text": "Consider airflow approaching an airplane wing."
+    },
+    {
+      "frame_id": 3,
+      "duration_s": 3,
+      "image_prompt": "Upper surface of the wing dominates center frame. Airflow particles above are denser and moving faster, shown by elongated motion streaks. Lower surface particles are visible below, moving more slowly with shorter streaks.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Velocity increases",
+      "continuity_note": "Camera continues panning right along the wing chord. Relative positions of upper and lower flows remain constant. Particle speed visually differentiates. Next frame advances to highlight pressure effects.",
+      "environment_details": [
+        "Wind tunnel walls implied",
+        "Subtle depth haze"
+      ],
+      "lighting": "Even lighting emphasizing motion streaks.",
+      "cinematic_look": "Cinematic scientific clarity with motion emphasis.",
+      "narration_text": "Air splits at the leading edge, traveling above and below the wing."
+    },
+    {
+      "frame_id": 4,
+      "duration_s": 3,
+      "image_prompt": "Upper surface remains central. Semi-transparent blue pressure field appears above the wing, labeled with lower pressure values. Fast-moving particles curve smoothly along the camber.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Lower pressure above",
+      "continuity_note": "Camera has advanced slightly right, tracking the upper surface. Pressure shading fades in while maintaining spatial continuity. Next frame reveals the lower surface pressure.",
+      "environment_details": [
+        "Consistent tunnel background",
+        "Measurement grid persists"
+      ],
+      "lighting": "Balanced lighting allowing pressure fields to remain legible.",
+      "cinematic_look": "High-end educational simulation aesthetic.",
+      "narration_text": "Curved upper surfaces accelerate airflow, reducing static pressure above."
+    },
+    {
+      "frame_id": 5,
+      "duration_s": 3,
+      "image_prompt": "Lower surface now more prominent. Warmer-colored pressure field appears beneath the wing, indicating higher pressure. Slower particles move with shorter, steadier streaks.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Higher pressure below",
+      "continuity_note": "Camera continues the same rightward pan, shifting focus downward while wing orientation stays fixed. Pressure contrast is clear. Next frame shows resulting force vectors.",
+      "environment_details": [
+        "Same wind tunnel context",
+        "Uniform background tone"
+      ],
+      "lighting": "Consistent, neutral lighting for clear pressure contrast.",
+      "cinematic_look": "Professional academic visualization with color-coded fields.",
+      "narration_text": "Slower airflow beneath maintains relatively higher pressure."
+    },
+    {
+      "frame_id": 6,
+      "duration_s": 3,
+      "image_prompt": "Combined view of upper and lower surfaces. Large upward arrows originate from pressure difference across the wing, centered near mid-chord. Airflow continues smoothly past.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Net upward force",
+      "continuity_note": "Camera pans right to mid-to-rear chord region. Force arrows animate upward while airflow remains continuous. Next frame moves toward the trailing edge and wake.",
+      "environment_details": [
+        "Persistent tunnel setting",
+        "Grid lines subtly visible"
+      ],
+      "lighting": "Slight emphasis on force arrows with gentle highlights.",
+      "cinematic_look": "Clear, authoritative scientific presentation.",
+      "narration_text": "This pressure difference produces a net upward force."
+    },
+    {
+      "frame_id": 7,
+      "duration_s": 2,
+      "image_prompt": "Trailing edge and wake region fill the frame. Airflow rejoins smoothly behind the wing. Upward lift arrow remains visible, fading slightly as the camera passes.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Aerodynamic lift",
+      "continuity_note": "Camera reaches the trailing edge, completing the left-to-right pan. All elements maintain continuity as airflow exits the frame, concluding the single continuous shot.",
+      "environment_details": [
+        "Wind tunnel fades into neutral background"
+      ],
+      "lighting": "Even lighting with gentle falloff at frame edge.",
+      "cinematic_look": "Resolved, polished academic ending frame.",
+      "narration_text": "Integrated across the wing, this force is aerodynamic lift."
+    }
+  ],
+  "full_script_20s": "Bernoulli’s principle relates fluid speed to pressure. Consider airflow approaching an airplane wing. Air splits at the leading edge, traveling above and below the wing. Curved upper surfaces accelerate airflow, reducing static pressure above. Slower airflow beneath maintains relatively higher pressure. This pressure difference produces a net upward force. Integrated across the wing, this force is aerodynamic lift."
+}

@@ -1,0 +1,105 @@
+{
+  "project_id": "7254bca4",
+  "user_prompt": "Explain Bernoulli's principle and lift using the airplane wing example. Show how air flows over and under the wing, pressure differences, and how this creates lift. Professional academic style for university students.",
+  "target_duration_s": 20,
+  "style_bible": {
+    "visual_style": "Professional, sophisticated, cinematic quality suitable for university-level academic content. Clean, modern, visually engaging. Think documentary/science channel aesthetic, not cartoon or children's animation. Suitable for explaining advanced, technical, or abstract concepts.",
+    "camera_rules": "ONE CONTINUOUS CAMERA MOVE: slow pan left-to-right at a constant speed using a 35mm lens, maintaining consistent height, angle, and framing across the full 20 seconds.",
+    "lighting_rules": "Professional, cinematic lighting appropriate for academic content, with soft directional key light and subtle rim lighting to clearly reveal aerodynamic shapes and flow features.",
+    "continuity_rules": "All frames are keyframes from the same continuous shot. The camera never cuts or jumps. The airplane wing and airflow field remain spatially consistent as the camera pans smoothly left-to-right."
+  },
+  "clips": [],
+  "frames": [
+    {
+      "frame_id": 1,
+      "duration_s": 3,
+      "image_prompt": "Wide view of a streamlined airplane wing centered horizontally, seen in a transparent wind-tunnel-like environment. The wing is oriented left-to-right, with air particles represented as small white dots flowing smoothly from left to right. Subtle grid lines fill the background to suggest measurement space. A faint color map overlays the wing surface, neutral at this stage. Arrows indicating airflow direction slide steadily left to right.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Airfoil in Uniform Flow",
+      "continuity_note": "This is the start of the continuous shot. The camera begins slightly left of the wing’s leading edge. In the next frame, the camera continues panning right, revealing more of the wing’s upper surface while all elements maintain their relative positions.",
+      "environment_details": [
+        "Transparent wind tunnel chamber",
+        "Subtle measurement grid background"
+      ],
+      "lighting": "Soft, even key lighting with gentle highlights along the wing surface.",
+      "cinematic_look": "Clean, high-contrast scientific visualization with shallow atmospheric depth.",
+      "narration_text": "An airfoil moving through air experiences pressure variations."
+    },
+    {
+      "frame_id": 2,
+      "duration_s": 3,
+      "image_prompt": "The camera has panned right to focus more on the wing’s upper surface. Air particles above the wing are closer together and move faster, shown by elongated motion streaks. Curved arrows trace the airflow accelerating over the cambered top surface. The lower surface remains visible with slower, more widely spaced particles.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Accelerated Upper-Surface Flow",
+      "continuity_note": "The camera has advanced rightward from the leading edge toward mid-chord. The wing remains centered vertically. Air particles above the wing visibly speed up while the pan continues smoothly to the right.",
+      "environment_details": [
+        "Same wind tunnel chamber",
+        "Consistent grid background"
+      ],
+      "lighting": "Directional light emphasizes curvature on the upper surface.",
+      "cinematic_look": "Precise, technical rendering with subtle motion blur on fast airflow.",
+      "narration_text": "Air accelerates over the curved upper surface."
+    },
+    {
+      "frame_id": 3,
+      "duration_s": 4,
+      "image_prompt": "Mid-wing view with a clearer pressure visualization: the upper surface shows cooler blue tones indicating lower pressure, while arrows above the wing move rapidly. A small, unobtrusive pressure scale appears at the edge of frame. The lower surface remains warmer in color. Particles continue flowing left to right.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Bernoulli’s Principle",
+      "continuity_note": "The camera continues its steady rightward pan across the wing’s midsection. Pressure colors evolve smoothly, maintaining spatial consistency as airflow motion continues uninterrupted toward the next frame.",
+      "environment_details": [
+        "Pressure color map overlay",
+        "Minimalist scientific scale markings"
+      ],
+      "lighting": "Balanced lighting to preserve color accuracy of pressure visualization.",
+      "cinematic_look": "Documentary-style scientific clarity with restrained color grading.",
+      "narration_text": "According to Bernoulli, higher velocity corresponds to lower static pressure."
+    },
+    {
+      "frame_id": 4,
+      "duration_s": 4,
+      "image_prompt": "The camera now reveals more of the lower surface. Air particles beneath the wing move more slowly, with shorter streaks. Warm colors dominate below the wing, indicating higher pressure. Vertical arrows subtly point upward from the lower surface, hinting at force direction.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Higher Pressure Below",
+      "continuity_note": "Panning right, the camera shifts focus downward slightly while maintaining the same angle. The pressure contrast between upper and lower surfaces becomes clearer as the shot continues seamlessly.",
+      "environment_details": [
+        "Consistent airflow particle field",
+        "Same wind tunnel setting"
+      ],
+      "lighting": "Slightly brighter fill light under the wing to reveal pressure detail.",
+      "cinematic_look": "High-fidelity academic visualization with smooth tonal transitions.",
+      "narration_text": "Below the wing, slower airflow maintains comparatively higher pressure beneath the airfoil."
+    },
+    {
+      "frame_id": 5,
+      "duration_s": 3,
+      "image_prompt": "A semi-transparent upward force vector emerges from the wing’s center of pressure, shown as a bold arrow pointing upward. Pressure colors remain stable. Airflow continues steadily around the wing as the camera pans further right.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Net Upward Force",
+      "continuity_note": "The camera advances rightward past the mid-wing region. The lift vector appears while all other elements retain their spatial relationships, continuing the same pan motion.",
+      "environment_details": [
+        "Force vector overlay",
+        "Stable background grid"
+      ],
+      "lighting": "Focused highlight on the force vector for clarity.",
+      "cinematic_look": "Elegant, restrained emphasis on key physical quantities.",
+      "narration_text": "This pressure difference integrates into a net upward force."
+    },
+    {
+      "frame_id": 6,
+      "duration_s": 3,
+      "image_prompt": "Trailing-edge view as the camera nears the right side of the wing. Airflow particles are deflected slightly downward behind the wing, indicating momentum change. The upward lift arrow remains visible, fading gently as the shot concludes.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Origin of Lift",
+      "continuity_note": "The camera completes its rightward pan toward the trailing edge. Airflow deflection and lift indication persist consistently as the continuous shot comes to rest.",
+      "environment_details": [
+        "Downwash region behind wing",
+        "Same controlled wind tunnel environment"
+      ],
+      "lighting": "Consistent lighting with subtle rim light on trailing edge.",
+      "cinematic_look": "Cohesive, cinematic scientific finish with smooth visual resolution.",
+      "narration_text": "Lift arises from momentum change and pressure imbalance."
+    }
+  ],
+  "full_script_20s": "An airfoil moving through air experiences pressure variations. Air accelerates over the curved upper surface. According to Bernoulli, higher velocity corresponds to lower static pressure. Below the wing, slower airflow maintains comparatively higher pressure beneath the airfoil. This pressure difference integrates into a net upward force. Lift arises from momentum change and pressure imbalance."
+}

@@ -1,0 +1,99 @@
+{
+  "project_id": "56ca4dae",
+  "user_prompt": "Explain the water cycle in a simple, kid-friendly way using only clouds, rain, rivers, and arrows. No humans or animals. One continuous camera move.",
+  "target_duration_s": 20,
+  "style_bible": {
+    "visual_style": "Bright, simple, kid-friendly illustration with soft shapes, bold colors, clean outlines, minimal textures.",
+    "camera_rules": "ONE CONTINUOUS CAMERA MOVE: slow vertical pan upward (pan_up) at a consistent speed and framing, as if the camera is gently floating from ground level up into the sky over 20 seconds.",
+    "lighting_rules": "Even daylight lighting, soft shadows, cheerful and clear visibility throughout.",
+    "continuity_rules": "All frames are keyframes from the same continuous shot. Camera never cuts or jumps. Elements maintain spatial relationships as camera moves smoothly upward along one vertical path."
+  },
+  "clips": [],
+  "frames": [
+    {
+      "frame_id": 1,
+      "duration_s": 3,
+      "image_prompt": "Foreground shows a wide blue river flowing left to right across the bottom of the frame, with animated curved arrows along the river surface pointing right to show flowing water. Small white upward arrows rise gently from the river surface, indicating water moving up. The river occupies the lower third; sky fills the upper area.",
+      "animation_type": "pan_up",
+      "on_screen_text_overlay": "Water flows in rivers",
+      "continuity_note": "This is the START of the continuous shot. Camera begins low near the river surface. In the next frame, the camera continues panning upward, keeping the river lower in frame while revealing more sky above.",
+      "environment_details": [
+        "Blue sky gradient",
+        "Distant soft hills at horizon"
+      ],
+      "lighting": "Bright daylight, soft and even",
+      "cinematic_look": "Clean educational illustration, stable framing"
+    },
+    {
+      "frame_id": 2,
+      "duration_s": 3,
+      "image_prompt": "The river now sits near the bottom edge as the camera has moved up. Numerous white arrows rise from the river into the air, growing slightly larger as they go upward, showing water vapor moving up. The sky fills most of the frame.",
+      "animation_type": "pan_up",
+      "on_screen_text_overlay": "Water goes up",
+      "continuity_note": "Camera has panned slightly upward from the river-focused view. River and arrows maintain position relative to camera while upward arrows extend higher. Camera continues the same upward pan into the sky for the next frame.",
+      "environment_details": [
+        "Clear blue sky",
+        "Soft horizon haze"
+      ],
+      "lighting": "Bright daylight, soft and even",
+      "cinematic_look": "Smooth continuous upward motion"
+    },
+    {
+      "frame_id": 3,
+      "duration_s": 4,
+      "image_prompt": "Large fluffy white clouds enter the center of the frame as the camera pans up. Upward arrows from below reach into the clouds. Inside the clouds, curved circular arrows rotate slowly, suggesting cloud formation.",
+      "animation_type": "pan_up",
+      "on_screen_text_overlay": "Clouds form",
+      "continuity_note": "Camera continues upward, bringing clouds into central view. Upward arrows now connect river below to clouds above. Cloud shapes and circular arrows stay centered as the camera keeps moving upward to reveal more of the cloud mass.",
+      "environment_details": [
+        "Layered white clouds",
+        "Light blue sky"
+      ],
+      "lighting": "Soft diffused light within clouds",
+      "cinematic_look": "Gentle, floating camera feel"
+    },
+    {
+      "frame_id": 4,
+      "duration_s": 4,
+      "image_prompt": "Clouds dominate the frame. Blue raindrop shapes begin falling downward from the bottom of the clouds, with straight downward arrows mixed among the raindrops to emphasize falling motion.",
+      "animation_type": "pan_up",
+      "on_screen_text_overlay": "Rain falls down",
+      "continuity_note": "Camera has moved further upward so clouds fill most of the view. Raindrops and downward arrows animate downward while clouds remain stable relative to camera. The camera continues its upward pan, letting rain fall out of frame below in the next shot.",
+      "environment_details": [
+        "Dense cloud layer",
+        "Fading sky gradient"
+      ],
+      "lighting": "Soft, slightly muted daylight",
+      "cinematic_look": "Consistent framing, smooth motion"
+    },
+    {
+      "frame_id": 5,
+      "duration_s": 3,
+      "image_prompt": "As the camera continues upward, the bottom of the frame reveals rain reaching the ground far below, where thin blue streams form and merge into a winding river. Downward arrows fade as curved flow arrows appear along the forming river.",
+      "animation_type": "pan_up",
+      "on_screen_text_overlay": "Water returns to rivers",
+      "continuity_note": "Camera is now high enough that rain connects clouds to the ground below. Streams gather into a river while maintaining the same spatial layout. Camera continues the same upward movement, completing the cycle visually.",
+      "environment_details": [
+        "Distant ground view",
+        "Blue river paths"
+      ],
+      "lighting": "Bright daylight returns near ground",
+      "cinematic_look": "Clear educational composition"
+    },
+    {
+      "frame_id": 6,
+      "duration_s": 3,
+      "image_prompt": "The camera reaches a higher vantage where clouds sit mid-frame and the river is visible far below. A large looping arrow connects river upward to clouds and back down as rain, forming a simple cycle shape.",
+      "animation_type": "pan_up",
+      "on_screen_text_overlay": "The water cycle",
+      "continuity_note": "Camera completes the upward pan, showing the full cycle at once. All elements hold their relative positions while arrows loop continuously. The camera maintains the same movement and gently settles as the shot ends.",
+      "environment_details": [
+        "Sky and clouds",
+        "River far below"
+      ],
+      "lighting": "Even, bright daylight",
+      "cinematic_look": "Unified one-take educational tableau"
+    }
+  ],
+  "full_script_20s": "The camera gently pans upward from rivers on the ground into the sky, visually showing water moving up, forming clouds, falling as rain, and flowing back into rivers using arrows and simple motion."
+}

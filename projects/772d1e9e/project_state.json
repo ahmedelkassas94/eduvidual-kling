@@ -1,0 +1,120 @@
+{
+  "project_id": "772d1e9e",
+  "user_prompt": "How does the water cycle work in nature?",
+  "target_duration_s": 20,
+  "style_bible": {
+    "visual_style": "Clean educational illustration, semi-realistic nature cutaway, bright colors, simplified shapes, clear arrows and particles",
+    "camera_rules": "ONE CONTINUOUS CAMERA MOVE: slow pan left-to-right at a consistent height and speed, wide lens, maintaining the same horizon and scale throughout all 20 seconds",
+    "lighting_rules": "Daylight, soft sunlight from upper right, consistent brightness and color temperature across entire shot",
+    "continuity_rules": "All frames are keyframes from the same continuous shot. Camera never cuts or jumps. Elements maintain spatial relationships as camera moves smoothly along one path."
+  },
+  "clips": [],
+  "frames": [
+    {
+      "frame_id": 1,
+      "duration_s": 3,
+      "image_prompt": "Far left of a wide coastal landscape. Ocean fills the foreground and left side, deep blue with gentle wave lines. Small white water droplets and translucent arrows rise upward from the ocean surface, drifting slightly up and right to show evaporation. The sun sits high in the sky near the top center-left, with faint heat shimmer lines pointing upward. Sparse clouds are visible far to the right in the distance.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Water Evaporates",
+      "continuity_note": "This is the START of the continuous shot. Camera begins on the ocean at the far left of the landscape. Evaporation arrows rise vertically from the water. Next frame continues the same slow pan right, keeping the ocean partially in view while revealing more sky and forming clouds.",
+      "environment_details": [
+        "Open ocean",
+        "Clear blue sky",
+        "Bright sun"
+      ],
+      "lighting": "Soft daylight, sunlit highlights on water",
+      "cinematic_look": "Wide educational vista, stable horizon"
+    },
+    {
+      "frame_id": 2,
+      "duration_s": 3,
+      "image_prompt": "Camera has panned slightly right. Ocean now occupies left third; sky dominates center. Puffy white clouds grow larger in the mid-sky, with small water vapor particles clustering together. Curved arrows show vapor condensing into clouds. The sun remains high and slightly left of center, same size and angle as before.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Clouds Form",
+      "continuity_note": "Camera continues panning right from the ocean toward the sky. Ocean and sun remain visible on the left, maintaining scale. Vapor particles now cluster into clouds. Next frame continues the same pan, bringing land and mountains into view on the right.",
+      "environment_details": [
+        "Ocean edge",
+        "Expanding clouds",
+        "Blue sky backdrop"
+      ],
+      "lighting": "Consistent daylight with soft cloud shading",
+      "cinematic_look": "Smooth lateral motion, no zoom"
+    },
+    {
+      "frame_id": 3,
+      "duration_s": 3,
+      "image_prompt": "Camera further right. Clouds now centered above a green mountainous landmass entering from the right. Blue raindrops fall straight down from the clouds onto mountain slopes. Downward arrows emphasize precipitation. Ocean is now mostly off-screen to the left, only a sliver visible.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Rain Falls",
+      "continuity_note": "Camera has advanced right so clouds are centered and mountains appear below. Raindrops fall vertically from the same clouds formed earlier. Cloud positions remain consistent as camera moves. Next frame continues panning right to follow water on land.",
+      "environment_details": [
+        "Green mountains",
+        "Cloud layer",
+        "Rainfall"
+      ],
+      "lighting": "Daylight with slightly darker tones under clouds",
+      "cinematic_look": "Wide landscape continuity"
+    },
+    {
+      "frame_id": 4,
+      "duration_s": 3,
+      "image_prompt": "Camera pans right across the mountains. Rain transitions into visible streams flowing downhill. Thin blue water lines trace paths down slopes toward valleys. Small arrows point downhill showing runoff direction. Clouds remain overhead but begin drifting left relative to frame.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Water Runs Off",
+      "continuity_note": "Camera continues its steady rightward pan along the same terrain. Mountains maintain scale while streams animate downhill. Clouds remain in the sky behind. Next frame continues right toward rivers and ground absorption areas.",
+      "environment_details": [
+        "Mountain slopes",
+        "Flowing streams",
+        "Vegetated terrain"
+      ],
+      "lighting": "Consistent daylight, soft shadows on slopes",
+      "cinematic_look": "Educational cutaway feel"
+    },
+    {
+      "frame_id": 5,
+      "duration_s": 3,
+      "image_prompt": "Camera now over lower land and valleys. A river widens across the center, flowing rightward. Some water arrows point downward into the soil, showing infiltration into brown underground layers with dotted blue water pockets. Remaining water continues along the river surface.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Soaks and Flows",
+      "continuity_note": "Camera pans right following the downhill water into a river valley. River flow direction aligns with camera movement. Underground layers appear beneath the surface without changing camera angle. Next frame continues right toward the river mouth and coast.",
+      "environment_details": [
+        "River valley",
+        "Soil layers",
+        "Grassy plains"
+      ],
+      "lighting": "Bright daylight, clear visibility",
+      "cinematic_look": "Smooth cross-section style"
+    },
+    {
+      "frame_id": 6,
+      "duration_s": 3,
+      "image_prompt": "Camera further right. The river grows wider and approaches the coastline. Arrows show river water moving steadily into the ocean. Underground water pockets taper off. The ocean reappears on the far right, matching the original water color.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Back to Ocean",
+      "continuity_note": "Camera continues panning right as the river meets the ocean. Water flow direction remains consistent. Color and scale of ocean match the opening frame. Next frame continues slightly right to complete the cycle visually.",
+      "environment_details": [
+        "River mouth",
+        "Coastline",
+        "Ocean surface"
+      ],
+      "lighting": "Sunlit coast, reflective water highlights",
+      "cinematic_look": "Wide continuous landscape"
+    },
+    {
+      "frame_id": 7,
+      "duration_s": 2,
+      "image_prompt": "Camera reaches the far right. Ocean now fills most of the frame again. Upward evaporation arrows reappear from the ocean surface, mirroring the start. In the distance to the left, faint land and clouds are still visible, completing the loop.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Cycle Repeats",
+      "continuity_note": "Camera completes the same steady pan right, ending back on the ocean. Evaporation resumes, visually linking to the beginning. Camera movement remains constant to the end of the shot.",
+      "environment_details": [
+        "Open ocean",
+        "Distant land",
+        "Sky with clouds"
+      ],
+      "lighting": "Consistent daylight to end",
+      "cinematic_look": "Seamless one-take finish"
+    }
+  ],
+  "full_script_20s": "A single continuous pan reveals the full water cycle across a connected landscape: ocean evaporation, cloud formation, precipitation over land, surface runoff, infiltration, river flow, and return to the ocean."
+}

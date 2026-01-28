@@ -110,6 +110,12 @@ class ImageFrame(BaseModel):
 
     lighting: Optional[str] = None
     cinematic_look: Optional[str] = None
+    
+    # Narration text for this frame segment (will be converted to speech)
+    narration_text: str = Field(
+        "",
+        description="Narration text to be spoken during this frame segment. Should be concise and match the duration.",
+    )
 
 
 class ProjectState(BaseModel):

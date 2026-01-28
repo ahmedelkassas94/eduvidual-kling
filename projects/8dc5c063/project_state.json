@@ -1,0 +1,113 @@
+{
+  "project_id": "8dc5c063",
+  "user_prompt": "Explain bernoulli’s principle using the airplane wing example",
+  "target_duration_s": 20,
+  "style_bible": {
+    "visual_style": "Clean educational 3D illustration, semi-realistic airplane wing with simplified airflow graphics, bold arrows and particles, high-contrast colors for clarity",
+    "camera_rules": "ONE CONTINUOUS CAMERA MOVE: slow pan right at a consistent speed, medium-wide framing, fixed lens, maintaining the airplane wing centered vertically throughout all 20 seconds",
+    "lighting_rules": "Bright neutral daylight with soft shadows, consistent illumination across the entire shot",
+    "continuity_rules": "All frames are keyframes from the same continuous shot. Camera never cuts or jumps. Elements maintain spatial relationships as camera moves smoothly along one path."
+  },
+  "clips": [],
+  "frames": [
+    {
+      "frame_id": 1,
+      "duration_s": 3,
+      "image_prompt": "Left side of frame shows the front portion of an airplane wing extending diagonally from lower left to upper right. Blue sky background. Small white airflow particles approach the wing from the left, moving rightward in parallel lines. Thin arrows point toward the wing, sliding left to right.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Air approaches wing",
+      "continuity_note": "This is the START of the continuous shot. Camera begins slightly left of the wing’s leading edge. Airflow particles move steadily right. Next frame continues the same pan right, revealing more of the wing surface.",
+      "environment_details": [
+        "Blue sky gradient background",
+        "No ground visible, high-altitude setting"
+      ],
+      "lighting": "Even daylight, soft highlights on wing surface",
+      "cinematic_look": "Smooth educational visualization, no dramatic contrast"
+    },
+    {
+      "frame_id": 2,
+      "duration_s": 3,
+      "image_prompt": "Camera now shows the wing’s leading edge near center frame. Curved top surface visible. Airflow particles split: some curve upward over the wing, others go straight under. Upper particles begin spacing out slightly, arrows bending over the top surface.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Wing curves air",
+      "continuity_note": "Camera has panned right to center the leading edge. Wing position remains consistent relative to frame. Airflow naturally divides and curves. Next frame continues panning right along the wing chord.",
+      "environment_details": [
+        "Consistent blue sky",
+        "Subtle motion blur on particles"
+      ],
+      "lighting": "Consistent daylight",
+      "cinematic_look": "Clear depth cues, simplified forms"
+    },
+    {
+      "frame_id": 3,
+      "duration_s": 3,
+      "image_prompt": "Mid-wing section now centered. Upper airflow particles move faster, shown by longer arrows and increased spacing speed, while lower particles move slower with shorter arrows. A subtle speed indicator bar near top flow increases slightly.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Faster air above",
+      "continuity_note": "Camera continues smooth rightward pan, now over mid-wing. Relative positions of wing and flows remain stable. Particle speed differences become more pronounced. Next frame advances toward pressure visualization.",
+      "environment_details": [
+        "Same sky backdrop",
+        "Wing surface smooth and light gray"
+      ],
+      "lighting": "Unchanged daylight",
+      "cinematic_look": "Instructional, uncluttered"
+    },
+    {
+      "frame_id": 4,
+      "duration_s": 3,
+      "image_prompt": "Same mid-to-rear wing area. Pressure symbols appear: small blue downward arrows above the wing labeled low pressure iconography, and larger red upward arrows below indicating higher pressure. Arrows gently pulsing.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Lower pressure above",
+      "continuity_note": "Camera slightly farther right, still aligned with wing. Pressure arrows appear without shifting wing position. Airflow continues. Next frame pans toward lift result.",
+      "environment_details": [
+        "Blue sky remains constant",
+        "Color-coded arrows for pressure"
+      ],
+      "lighting": "Consistent soft light",
+      "cinematic_look": "Clean scientific diagram style"
+    },
+    {
+      "frame_id": 5,
+      "duration_s": 3,
+      "image_prompt": "Rear portion of wing moves toward center frame. Combined effect shown: a large upward arrow beneath the wing labeled as lift force, slowly growing upward. Airflow particles continue moving right.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Pressure creates lift",
+      "continuity_note": "Camera pans right revealing trailing section. Lift arrow emerges naturally from pressure difference. All elements maintain spatial continuity. Next frame continues to summary view.",
+      "environment_details": [
+        "Same sky",
+        "Wing trailing edge visible"
+      ],
+      "lighting": "Stable daylight",
+      "cinematic_look": "Focused on cause-and-effect"
+    },
+    {
+      "frame_id": 6,
+      "duration_s": 3,
+      "image_prompt": "Wing now slightly left of center as camera advances. Lift arrow is steady and prominent. Airflow particles maintain speed differences. Subtle label lines connect fast air to low pressure above.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Bernoulli’s principle",
+      "continuity_note": "Camera continues same rightward motion, slightly past trailing edge. Relationships between airflow, pressure, and lift remain fixed. Next frame completes the pan with final emphasis.",
+      "environment_details": [
+        "Unchanged sky",
+        "Minimal graphic labels"
+      ],
+      "lighting": "Even lighting",
+      "cinematic_look": "Educational clarity"
+    },
+    {
+      "frame_id": 7,
+      "duration_s": 2,
+      "image_prompt": "Final view shows entire wing slightly left in frame with airflow, pressure arrows, and lift arrow all visible together. All arrows gently animate, reinforcing the concept.",
+      "animation_type": "pan_right",
+      "on_screen_text_overlay": "Lift from pressure difference",
+      "continuity_note": "Camera reaches the far right of the planned pan, slowing visually but maintaining direction. All elements remain consistent, concluding the single continuous shot.",
+      "environment_details": [
+        "Consistent blue sky",
+        "No new objects introduced"
+      ],
+      "lighting": "Same daylight finish",
+      "cinematic_look": "Clear concluding tableau"
+    }
+  ],
+  "full_script_20s": "A single continuous pan reveals an airplane wing in flight. Airflow particles and arrows show how air moves faster over the curved top of the wing than below, leading to pressure differences that create lift, illustrating Bernoulli’s principle step by step."
+}
