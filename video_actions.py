@@ -46,11 +46,11 @@ def generate_placeholder_video(
     out_file = output_dir / f"clip_{clip_id:03d}.mp4"
 
     if is_dry_run():
-        print("🛑 DRY RUN ENABLED — generating placeholder MP4 (no paid API call)")
+        print("[DRY RUN] DRY RUN ENABLED - generating placeholder MP4 (no paid API call)")
         _make_black_clip(out_file, duration_s)
         return out_file
 
-    # ⚠️ REAL COST HAPPENS HERE
+    # REAL COST HAPPENS HERE
     task_id = submit_wan_job(
         prompt=prompt,
         negative_prompt=negative_prompt,
@@ -103,7 +103,7 @@ def generate_clip_video(
     # DRY RUN (NO COST) — but still report intended chaining
     # ---------------------------
     if is_dry_run():
-        print("🛑 DRY RUN ENABLED — generating placeholder MP4 (no paid API call)")
+        print("[DRY RUN] DRY RUN ENABLED - generating placeholder MP4 (no paid API call)")
         _make_black_clip(out_file, duration_s)
 
         intended_mode = "I2V_DRY_RUN" if first_frame_url else "T2V_DRY_RUN"
@@ -129,7 +129,7 @@ def generate_clip_video(
 
             model = os.getenv("WAN_I2V_MODEL") or "wan2.6-i2v"
 
-            # ✅ Fix #3: use I2V-specific env resolution + shot type
+            # Fix #3: use I2V-specific env resolution + shot type
             i2v_resolution = os.getenv("WAN_I2V_RESOLUTION") or "720P"
             i2v_shot_type = os.getenv("WAN_I2V_SHOT_TYPE") or "single"
 
@@ -155,7 +155,7 @@ def generate_clip_video(
             return video_path, meta
 
         except Exception as e:
-            print("⚠️ I2V path failed; falling back to T2V.")
+            print("[WARN] I2V path failed; falling back to T2V.")
             print(f"Reason: {e}")
 
             # Fall back to T2V (paid)
@@ -294,10 +294,10 @@ def trim_video_to_duration(video_path: Path, target_duration_s: float, output_pa
         
         # If video is already close to target duration (within 0.1s), skip trimming
         if abs(actual_duration - target_duration_s) < 0.1:
-            print(f"ℹ️ Video duration ({actual_duration:.2f}s) already matches target ({target_duration_s}s), skipping trim")
+            print(f"[INFO] Video duration ({actual_duration:.2f}s) already matches target ({target_duration_s}s), skipping trim")
             return video_path
     except (subprocess.CalledProcessError, ValueError, subprocess.TimeoutExpired) as e:
-        print(f"⚠️ Could not probe video duration: {e}. Proceeding with trim anyway...")
+        print(f"[WARN] Could not probe video duration: {e}. Proceeding with trim anyway...")
     
     # Use temporary file to avoid overwriting input while reading
     if output_path is None:
@@ -321,7 +321,7 @@ def trim_video_to_duration(video_path: Path, target_duration_s: float, output_pa
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
     except subprocess.CalledProcessError:
         # If stream copy fails (e.g., keyframe issues), re-encode
-        print(f"⚠️ Stream copy trim failed, re-encoding...")
+        print(f"[WARN] Stream copy trim failed, re-encoding...")
         cmd_reencode = [
             ffmpeg,
             "-y",

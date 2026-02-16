@@ -58,7 +58,7 @@ def generate_speech(
     if model not in ["tts-1", "tts-1-hd"]:
         raise ValueError(f"Invalid model '{model}'. Must be 'tts-1' or 'tts-1-hd'")
     
-    print(f"🔊 Generating speech: {len(text)} chars -> {output_path.name}")
+    print(f"[TTS] Generating speech: {len(text)} chars -> {output_path.name}")
     print(f"   Voice: {voice}, Model: {model}, Speed: {speed}x")
     
     response = client.audio.speech.create(
@@ -71,7 +71,7 @@ def generate_speech(
     # Save to file
     response.stream_to_file(str(output_path))
     
-    print(f"✅ Speech generated: {output_path}")
+    print(f"[OK] Speech generated: {output_path}")
     return output_path
 
 

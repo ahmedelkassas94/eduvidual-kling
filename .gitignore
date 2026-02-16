@@ -23,8 +23,9 @@ build/
 .DS_Store
 Thumbs.db
 
-# Project outputs (large video files - uncomment if you don't want to commit projects)
-# projects/
+# Project outputs (large video files, generated clips)
+projects/
+workflow_output/
 
 # Temporary files
 *.tmp
