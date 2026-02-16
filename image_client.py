@@ -18,19 +18,19 @@ def generate_image(
     model: Optional[str] = None,
 ) -> Path:
     """
-    Generate a single image from text using Google's Gemini Pro image model
-    (Gemini 3 Pro Image / Nano Banana Pro) via the Google GenAI SDK.
+    Generate a single image from text using Google's Gemini image model
+    via the Google GenAI SDK.
 
     Configuration:
       - GEMINI_API_KEY: your Gemini API key from Google AI Studio
-      - IMAGE_MODEL (optional): override model name; defaults to "gemini-3-pro-image-preview" (Gemini Pro Vision / image generation)
+      - IMAGE_MODEL (optional): override model name; defaults to "gemini-3-pro-image-preview"
     """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY not found in .env")
 
     client = genai.Client(api_key=api_key)
-    # Default: Gemini 3 Pro Image (Nano Banana Pro) - Pro-tier image generation
+    # Default: Gemini 3 Pro Image (override with IMAGE_MODEL in .env)
     model_name = (model or os.getenv("IMAGE_MODEL") or "gemini-3-pro-image-preview").strip()
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -64,8 +64,8 @@ def generate_image_from_images(
     model: Optional[str] = None,
 ) -> Path:
     """
-    Generate an image from multiple input images (I2I) using Nano Banana Pro
-    (gemini-3-pro-image-preview) which supports up to 14 input images.
+    Generate an image from multiple input images (I2I) using Gemini image model
+    (gemini-3-pro-image-preview), which supports up to 14 input images.
     
     The prompt should describe in EXTREME DETAIL:
     - Spatial relationships between all objects (positions relative to each other and camera)
@@ -90,7 +90,7 @@ def generate_image_from_images(
     model_name = (model or os.getenv("I2I_MODEL") or "gemini-3-pro-image-preview").strip()
 
     if len(image_paths) > 14:
-        raise ValueError(f"Nano Banana Pro supports max 14 images, got {len(image_paths)}")
+        raise ValueError(f"Model supports max 14 images, got {len(image_paths)}")
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
 

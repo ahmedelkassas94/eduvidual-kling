@@ -8,20 +8,25 @@ from pydantic import BaseModel, Field, conint, conlist
 
 
 class Ingredient(BaseModel):
-    """One visual element (e.g. airplane, wing, arrows, environment). Has a name and a structured T2I prompt (5-part)."""
-    name: str = Field(..., description="Short identifier, e.g. 'airplane', 'airplane_wing', 'environment'")
-    t2i_prompt: str = Field(
-        ...,
-        description="Text-to-image prompt in 5 parts: [Scientific Subject], [Action/State], [Style/Medium], [Lighting & Texture], [Framing]. Omit if matplotlib_code is set.",
+    """Visual element reference (name + optional short description for I2V). When first_frame_t2i_prompt is used, no per-ingredient T2I."""
+    name: str = Field(..., description="Short identifier, e.g. 'airplane', 'lab_environment'")
+    description: str = Field("", description="Short description for I2V when this ingredient appears or is newly introduced.")
+    t2i_prompt: Optional[str] = Field(
+        None,
+        description="Optional per-ingredient T2I (used only in legacy mode). When first_frame_t2i_prompt is set, this is unused.",
     )
     matplotlib_code: Optional[str] = Field(
         None,
-        description="If this ingredient is a chart/data plot, Python Matplotlib code to render it precisely. When set, T2I is not used for this ingredient.",
+        description="If this ingredient is a chart/data plot, Python Matplotlib code to render it. When set, T2I is not used for this ingredient.",
     )
 
 
 class ScriptShot(BaseModel):
-    """One shot in the main 15s script. Very detailed description; references ingredients by name."""
+    """
+    One shot in the main 15s script.
+    Architecture: first frame and last frame of each shot are generated (T2I or I2I).
+    I2V animates from first frame to last frame. Last frame of shot N = first frame of shot N+1.
+    """
     shot_id: conint(ge=1)
     time_range: str = Field(..., description='e.g. "0-2s", "2-5s"')
     duration_s: conint(ge=1, le=10)
@@ -31,10 +36,14 @@ class ScriptShot(BaseModel):
     )
     movement_prompt: str = Field(
         ...,
-        description="Prompt for I2V: how to move/animate from start to end of this shot (camera, objects, continuity).",
+        description="Prompt for I2V: how the scene moves from first frame to last frame (camera, objects, continuity).",
     )
-    ingredient_names: conlist(str, min_length=1) = Field(
-        ...,
+    last_frame_t2i_prompt: str = Field(
+        "",
+        description="T2I prompt for the END state of this shot. Used to generate the last frame (or as intent for I2I reviser). Same detail level as first_frame_t2i_prompt: environment, every object, spatial relationships.",
+    )
+    ingredient_names: conlist(str, min_length=0) = Field(
+        default_factory=list,
         description="Names of ingredients that appear in this shot (must match Ingredient.name).",
     )
     new_ingredient_names: conlist(str, min_length=0) = Field(
@@ -45,7 +54,7 @@ class ScriptShot(BaseModel):
     on_screen_text_overlay: str = Field("none", description='Short on-screen text or "none".')
     i2i_spatial_prompt: str = Field(
         "",
-        description="EXTREMELY DETAILED prompt for I2I generation of shot 1's first frame. Only used for shot_id=1. Must describe: exact spatial relationships between all ingredients (positions relative to each other and camera), camera position/angle (e.g., 'camera facing directly at the scene', 'mirror placed above the table'), precise placement of each object, lighting, shadows, and how objects interact spatially. Leave empty for shots 2+.",
+        description="Legacy: I2I spatial prompt for shot 1 first frame. Unused when first_frame_t2i_prompt is set.",
     )
 
 
@@ -194,9 +203,8 @@ class ProjectState(BaseModel):
     full_script_20s: str = ""
 
     # ---- NEW: 15s shot-by-shot + ingredients pipeline ----
-    # Full shot-by-shot video description (15s). Reference for all generation.
     main_script_15s: str = Field("", description="Full 15s script: shot-by-shot detailed description of the whole video.")
-    # Named ingredients: one T2I image per ingredient (lengthy prompt each).
+    # Single T2I prompt for shot 1 first frame (environment + all ingredients + spatial relationships). When set, no per-ingredient T2I.
+    first_frame_t2i_prompt: str = Field("", description="One detailed T2I prompt for the first frame: environment, every ingredient in detail, spatial relationships.")
     ingredients: List[Ingredient] = Field(default_factory=list)
-    # Shots: each references ingredients by name; movement_prompt drives I2V.
     shots: List[ScriptShot] = Field(default_factory=list)

@@ -19,6 +19,8 @@ from video_actions import (  # noqa: E402
     trim_video_to_duration,
 )
 from image_client import generate_image, generate_image_from_images  # noqa: E402
+from reviser import describe_changes_for_i2i  # noqa: E402
+from scientific_revision import revise_frames_for_scientific_accuracy  # noqa: E402
 from frame_uploader import frame_to_public_url  # noqa: E402
 from wan_client import submit_wan_i2v_job, wait_for_wan_result, download_file  # noqa: E402
 from veo_client import (  # noqa: E402
@@ -523,6 +525,8 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
     ingredients = state.get("ingredients", [])
     shots = state.get("shots", [])
     style_bible = state.get("style_bible") or {}
+    first_frame_t2i_prompt = (state.get("first_frame_t2i_prompt") or "").strip()
+    use_single_t2i = bool(first_frame_t2i_prompt)
 
     clips_dir = project_dir / "clips"
     frames_dir = project_dir / "frames"
@@ -539,11 +543,15 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
     print("-" * 78)
     print(f"Project: {project_dir}")
     print(f"VIDEO_BACKEND: {video_backend}")
-    print(f"Shots: {len(shots)} | Ingredients: {len(ingredients)}")
+    use_first_last_architecture = use_single_t2i and all(
+        (s.get("last_frame_t2i_prompt") or "").strip() for s in shots
+    )
+    print(f"Shots: {len(shots)} | Ingredients: {len(ingredients)} | Mode: {'SINGLE T2I (first frame)' if use_single_t2i else 'Per-ingredient T2I'}")
+    if use_single_t2i:
+        print(f"Architecture: {'First+Last frame per shot, I2V between them (chain = last frame)' if use_first_last_architecture else 'First frame only, I2V then extract last'}")
     print("Approval: interactive (main script, T2I, and I2V prompts require APPROVE)")
     print("-" * 78)
 
-    # Main script: show once and require explicit approval before any generation
     main_script = (state.get("main_script_15s") or "").strip()
     if main_script:
         print("\n" + "-" * 78)
@@ -556,65 +564,73 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
             allow_auto=False,
         )
 
-    # require_cost_acknowledgement_if_needed()  # optional cost guard; kept disabled here
-
-    # Step 1: Generate one T2I image per ingredient (lengthy prompt each, with approval)
-    print("\n" + "=" * 78)
-    print("STEP 1: GENERATE INGREDIENT IMAGES (T2I — ONE PER INGREDIENT)")
-    print("=" * 78)
-
     ingredient_paths: Dict[str, Path] = {}
-    for ing in ingredients:
-        name = ing.get("name", "").strip()
-        if not name:
-            continue
-        safe_name = _sanitize_ingredient_filename(name)
-        image_path = ingredients_dir / f"{safe_name}.png"
-        ingredient_paths[name] = image_path
+    shot_1_first_frame_path = frames_dir / "shot_001_first.png"
 
-        if not image_path.exists():
-            matplotlib_code = (ing.get("matplotlib_code") or "").strip()
-            prompt = (ing.get("t2i_prompt") or "").strip()
-
-            if matplotlib_code:
-                # Chart/plot ingredient: render via Matplotlib instead of T2I
-                print(f"\n[MATPLOTLIB] Ingredient '{name}' has matplotlib_code — rendering plot...")
-                try:
-                    _run_matplotlib_ingredient(matplotlib_code, image_path)
-                    print(f"[OK] {name} (Matplotlib)")
-                except Exception as e:
-                    print(f"[WARN] Matplotlib render failed for '{name}': {e}. Skipping.")
-                continue
-
-            if not prompt:
-                continue
-            # Prepend style context and append style_suffix (Stylist injection for consistency)
+    if use_single_t2i:
+        # Step 1 (single T2I): Generate one image for shot 1 from first_frame_t2i_prompt
+        print("\n" + "=" * 78)
+        print("STEP 1: GENERATE FIRST FRAME (SINGLE T2I PROMPT)")
+        print("=" * 78)
+        if not shot_1_first_frame_path.exists():
             style_prefix = ""
             if style_bible:
                 vs = (style_bible.get("visual_style") or "").strip()
                 if vs:
                     style_prefix = f"STYLE: {vs}\n\n"
             style_suffix = (style_bible.get("style_suffix") or "").strip() if style_bible else ""
-            full_prompt = style_prefix + prompt + (" " + style_suffix if style_suffix else "")
-
-            # Show full T2I prompt for this ingredient and require approval before calling Nano Banana
-            print(f"\n" + "-" * 78)
-            print(f"[IMG] INGREDIENT '{name}' T2I PROMPT — REVIEW & APPROVE")
+            full_prompt = style_prefix + first_frame_t2i_prompt + (" " + style_suffix if style_suffix else "")
+            print("\n" + "-" * 78)
+            print("FIRST FRAME T2I PROMPT — REVIEW & APPROVE")
             print("-" * 78)
             print(full_prompt)
             _require_approval(
-                prompt_text=f"Type APPROVE to generate ingredient '{name}' ({image_path.name}).",
-                skip_message="Ingredient not approved. Exiting before image generation.",
+                prompt_text="Type APPROVE to generate shot 1 first frame (single T2I).",
+                skip_message="First frame T2I not approved. Exiting.",
                 allow_auto=False,
             )
-
-            print(f"[IMG] Generating ingredient: {name} -> {image_path.name}")
-            generate_image(full_prompt, image_path)
-            print(f"[OK] {name}")
+            print("\n[T2I] Generating first frame (single prompt)...")
+            generate_image(full_prompt, shot_1_first_frame_path)
+            print("[OK] First frame ready.")
         else:
-            print(f"[REUSE] Reusing: {name} -> {image_path.name}")
-
-    print(f"\n[OK] All {len(ingredient_paths)} ingredient images ready.")
+            print(f"[REUSE] Reusing first frame: {shot_1_first_frame_path.name}")
+    else:
+        # Legacy: one T2I image per ingredient
+        print("\n" + "=" * 78)
+        print("STEP 1: GENERATE INGREDIENT IMAGES (T2I — ONE PER INGREDIENT)")
+        print("=" * 78)
+        for ing in ingredients:
+            name = ing.get("name", "").strip()
+            if not name:
+                continue
+            safe_name = _sanitize_ingredient_filename(name)
+            image_path = ingredients_dir / f"{safe_name}.png"
+            ingredient_paths[name] = image_path
+            prompt = (ing.get("t2i_prompt") or "").strip()
+            matplotlib_code = (ing.get("matplotlib_code") or "").strip()
+            if not image_path.exists():
+                if matplotlib_code:
+                    print(f"\n[MATPLOTLIB] Ingredient '{name}' — rendering plot...")
+                    try:
+                        _run_matplotlib_ingredient(matplotlib_code, image_path)
+                        print(f"[OK] {name} (Matplotlib)")
+                    except Exception as e:
+                        print(f"[WARN] Matplotlib render failed for '{name}': {e}. Skipping.")
+                    continue
+                if not prompt:
+                    continue
+                style_prefix = (f"STYLE: {style_bible.get('visual_style', '')}\n\n" if style_bible and style_bible.get("visual_style") else "")
+                style_suffix = (style_bible.get("style_suffix") or "").strip() if style_bible else ""
+                full_prompt = style_prefix + prompt + (" " + style_suffix if style_suffix else "")
+                print(f"\n[IMG] INGREDIENT '{name}' T2I — REVIEW & APPROVE")
+                print("-" * 78)
+                print(full_prompt)
+                _require_approval(prompt_text=f"Type APPROVE to generate '{name}'.", skip_message="Not approved. Exiting.", allow_auto=False)
+                generate_image(full_prompt, image_path)
+                print(f"[OK] {name}")
+            else:
+                print(f"[REUSE] Reusing: {name} -> {image_path.name}")
+        print(f"\n[OK] All {len(ingredient_paths)} ingredient images ready.")
 
     # Step 2: For each shot — I2V (per-shot approval for inputs + prompt)
     print("\n" + "=" * 78)
@@ -624,21 +640,29 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
     chain_frame_path = frames_dir / "chain_frame.png"
     current_first_frame_path: Optional[Path] = None
     current_first_frame_url: str = ""
+    previous_shot_last_path: Optional[Path] = None  # In first+last arch: last frame of previous shot = first of next
     use_veo = video_backend == "veo"
+    topic_hint = (state.get("user_prompt") or "").strip()[:500]  # For scientific revision context
 
     for idx, shot in enumerate(shots):
         shot_id = int(shot.get("shot_id", idx + 1))
         duration_s = int(shot.get("duration_s", 3))
         movement_prompt = (shot.get("movement_prompt") or "").strip()
+        last_frame_t2i_prompt = (shot.get("last_frame_t2i_prompt") or "").strip()
         ingredient_names = shot.get("ingredient_names") or []
         new_ingredient_names = shot.get("new_ingredient_names") or []
 
         out_mp4 = clips_dir / f"clip_{shot_id:03d}.mp4"
+        shot_last_frame_path = frames_dir / f"shot_{shot_id:03d}_last.png"
 
         if out_mp4.exists() and is_video_valid(out_mp4):
             print(f"[REUSE] Reusing segment: {out_mp4.name}")
-            extract_last_frame(out_mp4, chain_frame_path)
-            current_first_frame_path = chain_frame_path
+            if use_first_last_architecture and shot_last_frame_path.exists():
+                previous_shot_last_path = shot_last_frame_path
+            else:
+                extract_last_frame(out_mp4, chain_frame_path)
+                previous_shot_last_path = chain_frame_path
+            current_first_frame_path = previous_shot_last_path
             current_first_frame_url = frame_to_public_url(current_first_frame_path) if not use_veo else ""
             # Per-shot narration skipped when POST_STITCH_AUDIO_ONLY=1 (audio from GPT+ElevenLabs after stitch)
             if not _env_bool("POST_STITCH_AUDIO_ONLY", False):
@@ -653,59 +677,91 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
             continue
 
         # Build first frame for this shot
-        veo_reference_paths: Optional[List[Path]] = None  # Unused for now: Veo API does not support image + reference_images together
-        if idx == 0:
-            # Shot 1: Use I2I (Image-to-Image) with Nano Banana Pro to generate first frame from ingredient images
-            ingredient_image_paths = [ingredient_paths[n] for n in ingredient_names if n in ingredient_paths and ingredient_paths[n].exists()]
-            if not ingredient_image_paths:
-                ingredient_image_paths = [ingredient_paths[n] for n in ingredient_names if n in ingredient_paths]
-            if not ingredient_image_paths:
-                raise RuntimeError(f"Shot 1: no ingredient images found for {ingredient_names}")
-            
-            # Get I2I spatial prompt from shot data
-            i2i_spatial_prompt = (shot.get("i2i_spatial_prompt") or "").strip()
-            if not i2i_spatial_prompt:
-                raise RuntimeError(f"Shot 1: i2i_spatial_prompt is required but missing. The LLM must generate a detailed spatial relationship prompt for I2I generation.")
-            
-            first_frame_path = frames_dir / f"shot_{shot_id:03d}_first.png"
-            
-            # Show I2I prompt for approval before generating
-            print("\n" + "-" * 78)
-            print(f"SHOT 1 — I2I SPATIAL PROMPT (REVIEW & APPROVE)")
-            print("-" * 78)
-            print(f"Ingredient images to compose ({len(ingredient_image_paths)}):")
-            for img_path in ingredient_image_paths:
-                print(f"  - {img_path.name}")
-            print(f"\nI2I Spatial Relationship Prompt:\n")
-            print(i2i_spatial_prompt)
-            _require_approval(
-                prompt_text=f"Type APPROVE to generate shot 1's first frame via I2I ({len(ingredient_image_paths)} ingredient images).",
-                skip_message="Shot 1 I2I not approved. Exiting before I2I call.",
-                allow_auto=False,
-            )
-            
-            # Generate first frame using I2I
-            print(f"\n[I2I] Generating first frame from {len(ingredient_image_paths)} ingredient images...")
-            generate_image_from_images(
-                prompt=i2i_spatial_prompt,
-                image_paths=ingredient_image_paths,
-                out_path=first_frame_path,
-            )
-            print(f"[I2I] First frame generated: {first_frame_path.name}")
-            current_first_frame_path = first_frame_path
+        veo_reference_paths: Optional[List[Path]] = None
+        if use_first_last_architecture:
+            if idx == 0:
+                current_first_frame_path = shot_1_first_frame_path
+            else:
+                current_first_frame_path = previous_shot_last_path
+        elif idx == 0:
+            if use_single_t2i and shot_1_first_frame_path.exists():
+                current_first_frame_path = shot_1_first_frame_path
+            else:
+                # Legacy: I2I or composite from ingredient images
+                ingredient_image_paths = [ingredient_paths[n] for n in ingredient_names if n in ingredient_paths and ingredient_paths[n].exists()]
+                if not ingredient_image_paths:
+                    ingredient_image_paths = [ingredient_paths[n] for n in ingredient_names if n in ingredient_paths]
+                if not ingredient_image_paths:
+                    raise RuntimeError(f"Shot 1: no ingredient images found for {ingredient_names}")
+                i2i_spatial_prompt = (shot.get("i2i_spatial_prompt") or "").strip()
+                first_frame_path = frames_dir / f"shot_{shot_id:03d}_first.png"
+                if i2i_spatial_prompt:
+                    print("\nSHOT 1 — I2I SPATIAL PROMPT (REVIEW & APPROVE)")
+                    print(i2i_spatial_prompt)
+                    _require_approval(prompt_text="Type APPROVE to generate shot 1 via I2I.", skip_message="Not approved. Exiting.", allow_auto=False)
+                    generate_image_from_images(prompt=i2i_spatial_prompt, image_paths=ingredient_image_paths, out_path=first_frame_path)
+                else:
+                    composite_images(ingredient_image_paths, first_frame_path)
+                current_first_frame_path = first_frame_path
         else:
-            if new_ingredient_names:
+            # Shot 2+: use last frame of previous shot; in legacy mode optionally composite new ingredient images
+            if new_ingredient_names and not use_single_t2i:
                 new_paths = [ingredient_paths[n] for n in new_ingredient_names if n in ingredient_paths and ingredient_paths[n].exists()]
                 paths = [current_first_frame_path] if (current_first_frame_path and current_first_frame_path.exists()) else []
                 paths.extend(new_paths)
-                if paths:
+                if len(paths) > 1:
                     first_frame_path = frames_dir / f"shot_{shot_id:03d}_first.png"
                     composite_images(paths, first_frame_path)
                     current_first_frame_path = first_frame_path
+                else:
+                    current_first_frame_path = chain_frame_path
             else:
                 current_first_frame_path = chain_frame_path
         if not current_first_frame_path or not current_first_frame_path.exists():
             raise RuntimeError(f"Shot {shot_id}: no first frame available")
+
+        # Generate last frame for this shot (first+last architecture): always I2I from first frame for continuity
+        if use_first_last_architecture and last_frame_t2i_prompt and not shot_last_frame_path.exists():
+            print("\n" + "-" * 78)
+            print(f"SHOT {shot_id} — LAST FRAME (I2I from first frame)")
+            print("-" * 78)
+            print(f"Intent:\n{last_frame_t2i_prompt[:600]}{'...' if len(last_frame_t2i_prompt) > 600 else ''}")
+            _require_approval(
+                prompt_text=f"Type APPROVE to generate shot {shot_id} last frame (I2I).",
+                skip_message="Last frame not approved. Exiting.",
+                allow_auto=False,
+            )
+            print("[Reviser] Describing changes from first frame to last frame...")
+            i2i_prompt = describe_changes_for_i2i(current_first_frame_path, last_frame_t2i_prompt)
+            print(f"[I2I] Generating last frame from first frame...")
+            generate_image_from_images(prompt=i2i_prompt, image_paths=[current_first_frame_path], out_path=shot_last_frame_path)
+            print(f"[OK] Last frame: {shot_last_frame_path.name}")
+
+        # Scientific revision: before I2V, check first+last frames for scientific accuracy
+        if use_first_last_architecture and shot_last_frame_path.exists():
+            shot_context = (shot.get("detailed_description") or "").strip() or movement_prompt[:300]
+            print("\n[Scientific revision] Checking first + last frame for scientific accuracy (OpenAI)...")
+            try:
+                is_accurate, suggested_changes = revise_frames_for_scientific_accuracy(
+                    current_first_frame_path,
+                    shot_last_frame_path,
+                    shot_context,
+                    topic_hint=topic_hint,
+                )
+                if not is_accurate and suggested_changes:
+                    print("[Scientific revision] Last frame not fully accurate. Regenerating with corrections...")
+                    base_prompt = describe_changes_for_i2i(current_first_frame_path, last_frame_t2i_prompt)
+                    revised_prompt = f"{base_prompt} Apply these corrections for scientific accuracy: {suggested_changes}"
+                    generate_image_from_images(
+                        prompt=revised_prompt,
+                        image_paths=[current_first_frame_path],
+                        out_path=shot_last_frame_path,
+                    )
+                    print("[OK] Last frame updated with scientific corrections.")
+                elif is_accurate:
+                    print("[Scientific revision] Frames are scientifically accurate.")
+            except Exception as e:
+                print(f"[WARN] Scientific revision skipped: {e}")
 
         # Only upload for Wan (Veo uses local paths)
         if use_veo:
@@ -713,12 +769,14 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
         else:
             current_first_frame_url = frame_to_public_url(current_first_frame_path)
 
-        # Show shot inputs (first frame + ingredients) and I2V movement prompt for approval
+        # Show shot inputs (first frame + last frame if new arch) and I2V movement prompt for approval
         print("\n" + "-" * 78)
         print(f"SHOT {shot_id} — INPUT & I2V PROMPT (REVIEW & APPROVE)")
         print("-" * 78)
         print(f"Duration: {duration_s}s")
         print(f"First frame image: {current_first_frame_path}")
+        if use_first_last_architecture:
+            print(f"Last frame image (chain for next shot): {shot_last_frame_path}")
         print(f"Ingredients in shot: {ingredient_names}")
         if new_ingredient_names:
             print(f"New ingredients introduced here: {new_ingredient_names}")
@@ -735,8 +793,13 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
             from video_actions import animate_still_to_video
             print(f"[I2V] (DRY_RUN) Shot {shot_id} -> {out_mp4.name}")
             animate_still_to_video(current_first_frame_path, out_mp4, duration_s, "hold")
-            extract_last_frame(out_mp4, chain_frame_path)
-            current_first_frame_path = chain_frame_path
+            if use_first_last_architecture and shot_last_frame_path.exists():
+                previous_shot_last_path = shot_last_frame_path
+                current_first_frame_path = shot_last_frame_path
+            else:
+                extract_last_frame(out_mp4, chain_frame_path)
+                previous_shot_last_path = chain_frame_path
+                current_first_frame_path = chain_frame_path
             if not _env_bool("POST_STITCH_AUDIO_ONLY", False):
                 narration_text = (shot.get("narration_text") or "").strip()
                 if narration_text:
@@ -756,6 +819,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                     prompt=movement_prompt,
                     image_path=current_first_frame_path,
                     duration_s=duration_s,
+                    last_frame_path=shot_last_frame_path if (use_first_last_architecture and shot_last_frame_path.exists()) else None,
                     reference_image_paths=veo_reference_paths if veo_reference_paths else None,
                     aspect_ratio="16:9",
                     resolution=(os.getenv("VEO_RESOLUTION") or "720p").strip(),
@@ -781,8 +845,13 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
             if need_trim:
                 trim_video_to_duration(out_mp4, duration_s)
 
-            extract_last_frame(out_mp4, chain_frame_path)
-            current_first_frame_path = chain_frame_path
+            if use_first_last_architecture and shot_last_frame_path.exists():
+                previous_shot_last_path = shot_last_frame_path
+                current_first_frame_path = shot_last_frame_path
+            else:
+                extract_last_frame(out_mp4, chain_frame_path)
+                previous_shot_last_path = chain_frame_path
+                current_first_frame_path = chain_frame_path
             current_first_frame_url = frame_to_public_url(current_first_frame_path) if not use_veo else ""
             print(f"[OK] Shot {shot_id} OK: {out_mp4.name}")
 

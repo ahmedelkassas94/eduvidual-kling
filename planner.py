@@ -56,6 +56,7 @@ def ai_plan_ingredients(prompt: str, target_duration_s: int = 15) -> ProjectStat
         frames=[],
         full_script_20s="",
         main_script_15s=data.get("main_script_15s", ""),
+        first_frame_t2i_prompt=data.get("first_frame_t2i_prompt", ""),
         ingredients=ingredients,
         shots=shots,
     )

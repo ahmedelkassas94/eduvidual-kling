@@ -15,9 +15,9 @@ from google.genai import types
 
 load_dotenv()
 
-# Veo 3.1 Fast: video with audio, optimized for speed
-DEFAULT_VEO_MODEL = "veo-3.1-fast-generate-preview"
-# Veo 3 Fast (stable): veo-3.0-fast-generate-001
+# Veo 3.1 standard (quality over speed); override with VEO_MODEL in .env
+DEFAULT_VEO_MODEL = "veo-3.1-generate-preview"
+# Fast variant: veo-3.1-fast-generate-preview
 
 # Supported durations (seconds) for Veo 3.1; 8s required when using reference_images
 VEO_DURATIONS = (4, 6, 8)
@@ -53,6 +53,7 @@ def submit_veo_i2v_job(
     image_path: Path,
     duration_s: int,
     *,
+    last_frame_path: Optional[Path] = None,
     reference_image_paths: Optional[List[Path]] = None,
     model: Optional[str] = None,
     aspect_ratio: str = "16:9",
@@ -62,6 +63,8 @@ def submit_veo_i2v_job(
     """
     Submit a Veo image-to-video job.
     - image_path: first frame (required).
+    - last_frame_path: optional; when set, Veo generates video that starts with the first frame
+      and ends with the last frame (frame-specific generation).
     - reference_image_paths: optional list of up to 3 additional images (Veo 3.1 "reference images")
       to guide content; no compositing needed.
     Returns an operation object; poll with wait_for_veo_result().
@@ -71,8 +74,9 @@ def submit_veo_i2v_job(
     model_name = (model or os.getenv("VEO_MODEL") or DEFAULT_VEO_MODEL).strip()
     image_part = _load_image_for_veo(image_path)
 
-    # Veo 3.1: up to 3 reference images (no compositing)
+    # Veo 3.1: up to 3 reference images (no compositing); last_frame for start/end
     ref_paths = (reference_image_paths or [])[: VEO_MAX_REFERENCE_IMAGES]
+    use_last_frame = last_frame_path and Path(last_frame_path).exists()
     # API requires duration_seconds="8" when using reference_images
     duration_param = "8" if ref_paths else _duration_seconds(duration_s)
 
@@ -83,13 +87,15 @@ def submit_veo_i2v_job(
         "negative_prompt": negative_prompt or None,
     }
 
+    if use_last_frame:
+        config_kw["last_frame"] = _load_image_for_veo(Path(last_frame_path))
+
     if ref_paths:
         ref_images = []
         for p in ref_paths:
             if not Path(p).exists():
                 continue
             img = _load_image_for_veo(Path(p))
-            # VideoGenerationReferenceImage(image=..., reference_type="asset")
             ref_images.append(types.VideoGenerationReferenceImage(image=img, reference_type="asset"))
         if ref_images:
             config_kw["reference_images"] = ref_images
@@ -99,6 +105,8 @@ def submit_veo_i2v_job(
     print("[Veo] I2V payload preview (Gemini API):")
     print(f"   Model: {model_name}")
     print(f"   Image (first frame): {image_path.name}")
+    if use_last_frame:
+        print(f"   Last frame (end): {Path(last_frame_path).name}")
     if ref_paths:
         print(f"   Reference images: {[Path(p).name for p in ref_paths]}")
     print(f"   Prompt length: {len(prompt)} chars")
