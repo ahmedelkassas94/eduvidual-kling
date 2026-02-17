@@ -8,12 +8,10 @@ import base64
 import json
 import os
 from pathlib import Path
-from typing import Tuple
+from typing import Optional, Tuple
 
-from dotenv import load_dotenv
+import env_loader  # noqa: F401 - load .env from project root first
 from openai import OpenAI
-
-load_dotenv()
 
 SYSTEM_PROMPT = """You are a scientific accuracy reviewer for educational video frames.
 You are shown two images: the FIRST FRAME and the LAST FRAME of a short video segment.
@@ -43,7 +41,7 @@ def revise_frames_for_scientific_accuracy(
     shot_context: str,
     *,
     topic_hint: str = "",
-) -> Tuple[bool, str | None]:
+) -> Tuple[bool, Optional[str]]:
     """
     Send first and last frame to OpenAI Vision and get scientific accuracy assessment.
 
@@ -57,9 +55,7 @@ def revise_frames_for_scientific_accuracy(
         (is_accurate, suggested_changes). If is_accurate is True, suggested_changes is None.
         If False, suggested_changes is a string to use when regenerating the last frame via I2I.
     """
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY not found in .env (required for scientific revision)")
+    api_key = env_loader.require_env("OPENAI_API_KEY", "Scientific revision (OpenAI Vision) requires OpenAI.")
 
     if not first_frame_path.exists():
         raise FileNotFoundError(f"First frame not found: {first_frame_path}")
@@ -67,7 +63,7 @@ def revise_frames_for_scientific_accuracy(
         raise FileNotFoundError(f"Last frame not found: {last_frame_path}")
 
     client = OpenAI(api_key=api_key)
-    model = (os.getenv("OPENAI_MODEL") or "gpt-4o").strip()
+    model = (env_loader.get_env("OPENAI_MODEL") or "gpt-4o").strip()
 
     first_url = _image_to_base64_data_url(first_frame_path)
     last_url = _image_to_base64_data_url(last_frame_path)

@@ -5,9 +5,7 @@ All API keys (OpenAI, Gemini) are read from .env.
 """
 from pathlib import Path
 
-from dotenv import load_dotenv
-
-load_dotenv()
+import env_loader  # noqa: F401 - load .env from project root first
 
 from workflow_state import VideoProductionState
 from nodes.retriever import retriever_node

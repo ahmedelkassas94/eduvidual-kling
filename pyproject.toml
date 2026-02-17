@@ -1,0 +1,5 @@
+[project]
+name = "eduvidual"
+version = "0.1.0"
+description = "Educational video pipeline: planner (Gemini) → orchestrator → stitch"
+requires-python = ">=3.10"

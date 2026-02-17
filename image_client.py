@@ -2,12 +2,28 @@ import os
 from pathlib import Path
 from typing import Optional, List
 
-from dotenv import load_dotenv
+import env_loader  # noqa: F401 - load .env from project root first
 from google import genai
 from PIL import Image
 
 
-load_dotenv()
+def _response_parts_or_raise(response, context: str = "Gemini"):
+    """Return response.parts, or raise a clear error if None/empty (e.g. blocked by safety)."""
+    if response is None:
+        raise RuntimeError(f"{context}: API returned no response.")
+    parts = getattr(response, "parts", None)
+    if parts is None or (hasattr(parts, "__len__") and len(parts) == 0):
+        reason = "no content returned"
+        if getattr(response, "candidates", None) and len(response.candidates) > 0:
+            c = response.candidates[0]
+            reason = getattr(c, "finish_reason", None) or getattr(c, "finishReason", None) or reason
+            if getattr(c, "safety_ratings", None):
+                reason = f"{reason} (safety_ratings may have blocked)"
+        raise RuntimeError(
+            f"{context}: {reason}. Try a different prompt or image; "
+            "if blocked by safety filters, simplify the scene."
+        )
+    return parts
 
 
 def generate_image(
@@ -25,13 +41,11 @@ def generate_image(
       - GEMINI_API_KEY: your Gemini API key from Google AI Studio
       - IMAGE_MODEL (optional): override model name; defaults to "gemini-3-pro-image-preview"
     """
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY not found in .env")
+    api_key = env_loader.require_env("GEMINI_API_KEY", "Image generation (T2I) requires Gemini.")
 
     client = genai.Client(api_key=api_key)
     # Default: Gemini 3 Pro Image (override with IMAGE_MODEL in .env)
-    model_name = (model or os.getenv("IMAGE_MODEL") or "gemini-3-pro-image-preview").strip()
+    model_name = (model or env_loader.get_env("IMAGE_MODEL") or "gemini-3-pro-image-preview").strip()
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -41,9 +55,9 @@ def generate_image(
         contents=[prompt],
     )
 
-    # Save the first returned image part to disk.
+    parts = _response_parts_or_raise(response, "Gemini T2I")
     image_saved = False
-    for part in response.parts:
+    for part in parts:
         if getattr(part, "inline_data", None) is not None:
             img = part.as_image()
             img.save(out_path)
@@ -82,12 +96,10 @@ def generate_image_from_images(
     Returns:
         Path to the generated image
     """
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY not found in .env")
+    api_key = env_loader.require_env("GEMINI_API_KEY", "Image generation (T2I) requires Gemini.")
 
     client = genai.Client(api_key=api_key)
-    model_name = (model or os.getenv("I2I_MODEL") or "gemini-3-pro-image-preview").strip()
+    model_name = (model or env_loader.get_env("I2I_MODEL") or "gemini-3-pro-image-preview").strip()
 
     if len(image_paths) > 14:
         raise ValueError(f"Model supports max 14 images, got {len(image_paths)}")
@@ -113,9 +125,9 @@ def generate_image_from_images(
         contents=contents,
     )
 
-    # Save the first returned image part to disk
+    parts = _response_parts_or_raise(response, "Gemini I2I")
     image_saved = False
-    for part in response.parts:
+    for part in parts:
         if getattr(part, "inline_data", None) is not None:
             img = part.as_image()
             img.save(out_path)

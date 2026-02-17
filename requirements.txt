@@ -3,7 +3,15 @@ Pillow>=10.0.0
 # For optional ElevenLabs sound effects
 requests>=2.28.0
 
+# Bundled ffmpeg for DRY_RUN placeholder clips and stitch_video (no system ffmpeg needed)
+imageio-ffmpeg>=0.5.0
+
+# Planner (LLM + CLI)
+python-dotenv>=1.0.0
+google-genai>=1.0.0
+openai>=1.0.0
+rich>=13.0.0
+
 # LangGraph + LlamaIndex (workflow and retriever)
 langgraph>=0.2.0
 llama-index>=0.10.0
-python-dotenv>=1.0.0

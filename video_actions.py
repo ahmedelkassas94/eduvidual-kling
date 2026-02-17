@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import subprocess
 import os
+import shutil
 from typing import Optional, Tuple, Dict, Any
 
 from wan_client import submit_wan_job, wait_for_wan_result, download_file
@@ -16,13 +17,37 @@ def is_dry_run() -> bool:
 
 
 def _ffmpeg_exe() -> str:
-    exe = (Path(__file__).resolve().parent / "ffmpeg" / "bin" / "ffmpeg.exe")
-    if not exe.exists():
-        raise FileNotFoundError(
-            f"ffmpeg.exe not found at: {exe}\n"
-            "Make sure you extracted ffmpeg into: ai_video_agent/ffmpeg/bin/ffmpeg.exe"
-        )
-    return str(exe)
+    """Return path to ffmpeg: project bundle, imageio-ffmpeg, or system ffmpeg."""
+    import platform
+    base = Path(__file__).resolve().parent / "ffmpeg" / "bin"
+    on_windows = platform.system() == "Windows"
+    # Windows: use .exe from bundle if present
+    if on_windows:
+        exe_win = base / "ffmpeg.exe"
+        if exe_win.exists():
+            return str(exe_win)
+    # macOS/Linux: use binary without .exe from bundle
+    exe_unix = base / "ffmpeg"
+    if exe_unix.exists() and os.access(exe_unix, os.X_OK):
+        return str(exe_unix)
+    # Bundled ffmpeg from imageio-ffmpeg (pip install imageio-ffmpeg)
+    try:
+        import imageio_ffmpeg
+        exe = imageio_ffmpeg.get_ffmpeg_exe()
+        if exe and Path(exe).exists():
+            return exe
+    except Exception:
+        pass
+    # System ffmpeg from PATH
+    system_ffmpeg = shutil.which("ffmpeg")
+    if system_ffmpeg:
+        return system_ffmpeg
+    raise FileNotFoundError(
+        "ffmpeg not found. Either:\n"
+        "  - pip install imageio-ffmpeg (provides a bundled ffmpeg), or\n"
+        "  - Install ffmpeg (e.g. brew install ffmpeg) and ensure it is on PATH, or\n"
+        "  - Place ffmpeg in: project/ffmpeg/bin/ffmpeg (macOS/Linux) or ffmpeg.exe (Windows)"
+    )
 
 
 # ---------------------------------------------------------

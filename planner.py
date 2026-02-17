@@ -3,7 +3,12 @@ import uuid
 import json
 from pathlib import Path
 
-from rich import print
+import env_loader  # noqa: F401 - load .env from project root first
+
+try:
+    from rich import print
+except ImportError:
+    pass  # use built-in print
 
 from llm_client import generate_clip_plan_json, generate_ingredients_plan_json
 from schemes import ProjectState, StyleBible, ImageFrame, Ingredient, ScriptShot
@@ -90,6 +95,8 @@ def ai_plan(prompt: str, target_duration_s: int) -> ProjectState:
 
 
 def main():
+    env_loader.check_planner_env()  # fail fast with clear message if .env missing key
+
     if len(sys.argv) < 2:
         print("[red]Usage:[/red] python planner.py \"your prompt\" [target_seconds]")
         print("  target_seconds: 15 = new ingredients pipeline, 20 = legacy frames pipeline")

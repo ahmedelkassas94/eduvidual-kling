@@ -72,3 +72,56 @@ def describe_changes_for_i2i(first_frame_path: Path, last_frame_intent: str) -> 
     if not text:
         raise RuntimeError("Reviser returned empty response")
     return text.strip()
+
+
+# ---------------------------------------------------------
+# I2V PROMPT REVISER (exact first/last frame)
+# ---------------------------------------------------------
+I2V_REVISER_SYSTEM = """You are an expert at writing image-to-video (I2V) prompts for generative video models (e.g. Veo, Wan).
+
+Your task: Revise the given I2V movement prompt so that it EXPLICITLY and UNAMBIGUOUSLY requires:
+1. The generated video MUST start with the exact first frame provided as input — the first frame of the output video must match the input image exactly, with no variation or re-interpretation.
+2. The generated video MUST end with the exact last frame provided as the target — the final frame of the output video must match the target end-state image exactly.
+
+Keep the rest of the prompt (motion, camera, objects, timing) unchanged. Add or strengthen sentences that state the exact start/end frame requirement. Output ONLY the revised prompt text, no preamble or explanation."""
+
+
+def revise_i2v_prompt_for_exact_frames(movement_prompt: str) -> str:
+    """
+    Revise an I2V movement prompt so it explicitly requires the generated video
+    to start with the exact first frame and end with the exact last frame.
+    Uses Gemini to rewrite the prompt while preserving motion/camera detail.
+    """
+    if not (movement_prompt or "").strip():
+        return movement_prompt
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return movement_prompt  # No API key: return as-is
+
+    try:
+        client = genai.Client(api_key=api_key)
+        model = (os.getenv("REVISER_MODEL") or os.getenv("PLANNER_MODEL") or "gemini-2.5-flash").strip()
+        user_content = (
+            "Revise the following I2V (image-to-video) movement prompt so it explicitly requires "
+            "that the generated video MUST start exactly with the provided first frame and MUST end "
+            "exactly with the provided last frame. Keep all motion, camera, and object details. "
+            "Output only the revised prompt.\n\n"
+            f"Current prompt:\n\"\"\"{movement_prompt.strip()}\"\"\""
+        )
+        response = client.models.generate_content(
+            model=model,
+            contents=[user_content],
+            config=GenerateContentConfig(system_instruction=I2V_REVISER_SYSTEM),
+        )
+        text = getattr(response, "text", None)
+        if not text and getattr(response, "candidates", None) and response.candidates:
+            c = response.candidates[0]
+            parts = getattr(getattr(c, "content", None), "parts", None) or []
+            if parts:
+                text = getattr(parts[0], "text", None)
+        if text and text.strip():
+            return text.strip()
+    except Exception:
+        pass
+    return movement_prompt

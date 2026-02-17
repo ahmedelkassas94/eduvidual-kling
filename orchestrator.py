@@ -6,10 +6,7 @@ import tempfile
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 
-from dotenv import load_dotenv
-
-# Load .env for THIS process (critical for DRY_RUN, etc.)
-load_dotenv()
+import env_loader  # noqa: F401 - load .env from project root first
 
 from video_actions import (  # noqa: E402
     is_dry_run,
@@ -19,7 +16,7 @@ from video_actions import (  # noqa: E402
     trim_video_to_duration,
 )
 from image_client import generate_image, generate_image_from_images  # noqa: E402
-from reviser import describe_changes_for_i2i  # noqa: E402
+from reviser import describe_changes_for_i2i, revise_i2v_prompt_for_exact_frames  # noqa: E402
 from scientific_revision import revise_frames_for_scientific_accuracy  # noqa: E402
 from frame_uploader import frame_to_public_url  # noqa: E402
 from wan_client import submit_wan_i2v_job, wait_for_wan_result, download_file  # noqa: E402
@@ -561,7 +558,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
         _require_approval(
             prompt_text="Type APPROVE to confirm the main 15s script.",
             skip_message="Main script not approved. Exiting before generation.",
-            allow_auto=False,
+            allow_auto=True,
         )
 
     ingredient_paths: Dict[str, Path] = {}
@@ -587,7 +584,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
             _require_approval(
                 prompt_text="Type APPROVE to generate shot 1 first frame (single T2I).",
                 skip_message="First frame T2I not approved. Exiting.",
-                allow_auto=False,
+                allow_auto=True,
             )
             print("\n[T2I] Generating first frame (single prompt)...")
             generate_image(full_prompt, shot_1_first_frame_path)
@@ -625,7 +622,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                 print(f"\n[IMG] INGREDIENT '{name}' T2I — REVIEW & APPROVE")
                 print("-" * 78)
                 print(full_prompt)
-                _require_approval(prompt_text=f"Type APPROVE to generate '{name}'.", skip_message="Not approved. Exiting.", allow_auto=False)
+                _require_approval(prompt_text=f"Type APPROVE to generate '{name}'.", skip_message="Not approved. Exiting.", allow_auto=True)
                 generate_image(full_prompt, image_path)
                 print(f"[OK] {name}")
             else:
@@ -698,7 +695,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                 if i2i_spatial_prompt:
                     print("\nSHOT 1 — I2I SPATIAL PROMPT (REVIEW & APPROVE)")
                     print(i2i_spatial_prompt)
-                    _require_approval(prompt_text="Type APPROVE to generate shot 1 via I2I.", skip_message="Not approved. Exiting.", allow_auto=False)
+                    _require_approval(prompt_text="Type APPROVE to generate shot 1 via I2I.", skip_message="Not approved. Exiting.", allow_auto=True)
                     generate_image_from_images(prompt=i2i_spatial_prompt, image_paths=ingredient_image_paths, out_path=first_frame_path)
                 else:
                     composite_images(ingredient_image_paths, first_frame_path)
@@ -729,7 +726,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
             _require_approval(
                 prompt_text=f"Type APPROVE to generate shot {shot_id} last frame (I2I).",
                 skip_message="Last frame not approved. Exiting.",
-                allow_auto=False,
+                allow_auto=True,
             )
             print("[Reviser] Describing changes from first frame to last frame...")
             i2i_prompt = describe_changes_for_i2i(current_first_frame_path, last_frame_t2i_prompt)
@@ -763,6 +760,11 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
             except Exception as e:
                 print(f"[WARN] Scientific revision skipped: {e}")
 
+        # Revise I2V prompt so it explicitly requires video to start/end with exact first/last frame
+        if use_first_last_architecture and shot_last_frame_path.exists() and (movement_prompt or "").strip():
+            movement_prompt = revise_i2v_prompt_for_exact_frames(movement_prompt)
+            print("[I2V prompt reviser] Revised movement_prompt to require exact first/last frame.")
+
         # Only upload for Wan (Veo uses local paths)
         if use_veo:
             current_first_frame_url = ""
@@ -785,7 +787,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
         _require_approval(
             prompt_text=f"Type APPROVE to generate shot {shot_id} ({duration_s}s).",
             skip_message="Shot not approved. Exiting before I2V call.",
-            allow_auto=False,
+            allow_auto=True,
         )
 
         # DRY RUN: placeholder clip

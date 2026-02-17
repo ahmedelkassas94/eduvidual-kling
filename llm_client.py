@@ -1,28 +1,41 @@
 import json
 import os
-from dotenv import load_dotenv
+from pathlib import Path
+
+import env_loader  # noqa: F401 - load .env from project root first
 from openai import OpenAI
 
 from google import genai
+from google.genai import errors as genai_errors
 from google.genai.types import GenerateContentConfig
-
-load_dotenv()
 
 # Default Gemini 2.5 model for script/prompt writing (planner). Override with PLANNER_MODEL in .env.
 DEFAULT_PLANNER_MODEL = "gemini-2.5-flash"
 
+GEMINI_KEY_INVALID_HELP = (
+    "Gemini rejected your API key (often due to key restrictions).\n"
+    "Fix: Create a NEW key at https://aistudio.google.com/apikey\n"
+    "  - Do NOT set 'Application restrictions' (no IP address or HTTP referrer limits).\n"
+    "  - Put the new key in .env as GEMINI_API_KEY=...\n"
+    "Then run the planner again from your terminal."
+)
+
 
 def _gemini_generate(system_prompt: str, user_prompt: str, model: str) -> str:
     """Call Gemini for text generation with system + user prompt. Returns response text."""
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY not found in .env (required for Gemini planner)")
+    api_key = env_loader.require_env("GEMINI_API_KEY", "Planner requires Gemini for script generation.")
     client = genai.Client(api_key=api_key)
-    response = client.models.generate_content(
-        model=model,
-        contents=user_prompt,
-        config=GenerateContentConfig(system_instruction=system_prompt),
-    )
+    try:
+        response = client.models.generate_content(
+            model=model,
+            contents=user_prompt,
+            config=GenerateContentConfig(system_instruction=system_prompt),
+        )
+    except genai_errors.ClientError as e:
+        err_str = str(e).lower()
+        if "api key" in err_str and ("invalid" in err_str or "400" in err_str or "api_key_invalid" in err_str):
+            raise RuntimeError(GEMINI_KEY_INVALID_HELP) from e
+        raise
     text = getattr(response, "text", None)
     if not text and getattr(response, "candidates", None):
         c = response.candidates[0]
@@ -45,12 +58,9 @@ def generate_clip_plan_json(prompt: str, target_duration_s: int) -> str:
     - No narration/audio
     """
 
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY not found in .env")
-
+    api_key = env_loader.require_env("OPENAI_API_KEY", "OpenAI is required for clip plan generation.")
     client = OpenAI(api_key=api_key)
-    model = (os.getenv("OPENAI_MODEL") or "gpt-5.2-chat-latest").strip()
+    model = (env_loader.get_env("OPENAI_MODEL") or "gpt-5.2-chat-latest").strip()
 
     system_prompt = (
         "You are a professional storyboard artist and academic explainer-video designer. "
@@ -202,7 +212,7 @@ def generate_ingredients_plan_json(prompt: str, target_duration_s: int = 15) -> 
     - ingredients: list of { name, description }.
     - shots: list of shots with detailed_description, movement_prompt, ingredient_names, new_ingredient_names.
     """
-    planner_model = (os.getenv("PLANNER_MODEL") or DEFAULT_PLANNER_MODEL).strip()
+    planner_model = (env_loader.get_env("PLANNER_MODEL") or DEFAULT_PLANNER_MODEL).strip()
 
     system_prompt = (
         "You are a professional storyboard artist and academic explainer-video designer. "
@@ -223,7 +233,7 @@ ARCHITECTURE (first frame + last frame per shot, I2V between them):
 
 TARGET MODELS:
 - first_frame_t2i_prompt and last_frame_t2i_prompt: GOOGLE GEMINI 2.5 (text-to-image). Same detail level: environment, every object, spatial relationships. last_frame_t2i_prompt describes the END state of the shot (what the final still should look like).
-- movement_prompt: GOOGLE VEO 3.1 (image-to-video). Describes how the scene moves from the first frame to the last frame. Be extremely detailed so Veo 3.1 understands exactly what to animate: direction, speed, timing, spatial relationships. If something is static, say so explicitly. Describe camera motion clearly.
+- movement_prompt: GOOGLE VEO 3.1 (image-to-video). Describes how the scene moves from the first frame to the last frame. CRITICAL: The generated video MUST start exactly with the provided first frame (first frame of the clip must match the input image exactly, no variation) and MUST end exactly with the provided last frame (final frame of the clip must match the target end-state image exactly). Be extremely detailed so Veo 3.1 understands exactly what to animate: direction, speed, timing, spatial relationships. If something is static, say so explicitly. Describe camera motion clearly. Always explicitly state that the video must begin with the exact first frame and end with the exact last frame.
 
 TOPIC:
 \"\"\"{prompt}\"\"\"
@@ -241,7 +251,7 @@ ARCHITECTURE (follow exactly):
 
 4. SHOTS: Each shot has: time_range, duration_s, detailed_description, last_frame_t2i_prompt, movement_prompt, ingredient_names, new_ingredient_names, narration_text, on_screen_text_overlay.
    - last_frame_t2i_prompt: FULL T2I prompt for the END state of this shot (for Gemini 2.5). Same detail as first_frame_t2i_prompt: environment, every object in final positions, spatial relationships, lighting. This image becomes the first frame of the next shot.
-   - movement_prompt is sent to VEO 3.1. It MUST be VERY LONG and DETAILED: how the scene moves from the first frame to the last frame. For every item: start position, end position, path, speed, spatial relationship. If static, say "remains fixed at ...". Include camera motion. End with: "Maintain structural integrity and consistency of the source image. No morphing. No hallucinating new objects."
+   - movement_prompt is sent to VEO 3.1. It MUST be VERY LONG and DETAILED: how the scene moves from the first frame to the last frame. You MUST explicitly require: the generated video must START with the exact first frame (the first frame of the output must match the provided first-frame image exactly) and END with the exact last frame (the final frame must match the provided last-frame image exactly). For every item: start position, end position, path, speed, spatial relationship. If static, say "remains fixed at ...". Include camera motion. End with: "The video must begin exactly with the provided first frame and end exactly with the provided last frame. Maintain structural integrity and consistency of the source image. No morphing. No hallucinating new objects."
 
 RULES:
 - Total duration MUST be exactly {target_duration_s} seconds. Sum of shot duration_s = {target_duration_s}.
@@ -278,7 +288,7 @@ OUTPUT JSON (must match exactly):
       "duration_s": 4,
       "detailed_description": "What happens in this shot.",
       "last_frame_t2i_prompt": "Same environment as first frame. Mirror: center-right, vertical, static. Laser beam: now visible hitting mirror at center and reflected beam visible on the other side, same lighting and style. Camera position unchanged. Professional scientific illustration, 8k.",
-      "movement_prompt": "VEO 3.1: Mirror: static. Laser beam: moves left to right toward mirror; reaches mirror center by end. Camera: slow dolly-in. Maintain structural integrity and consistency of the source image. No morphing. No hallucinating new objects.",
+      "movement_prompt": "VEO 3.1: The video must start exactly with the provided first frame and end exactly with the provided last frame. Mirror: static. Laser beam: moves left to right toward mirror; reaches mirror center by end. Camera: slow dolly-in. The video must begin exactly with the provided first frame and end exactly with the provided last frame. Maintain structural integrity and consistency of the source image. No morphing. No hallucinating new objects.",
       "ingredient_names": ["mirror", "laser_beam"],
       "new_ingredient_names": [],
       "narration_text": "Narration for this shot.",
@@ -291,7 +301,7 @@ OUTPUT JSON (must match exactly):
       "duration_s": 3,
       "detailed_description": "Normal line and angle arcs appear.",
       "last_frame_t2i_prompt": "Same scene. Mirror and laser unchanged. NEW: thin dashed normal line perpendicular to mirror at reflection point; two small angle arcs with arrowheads. Same style and lighting.",
-      "movement_prompt": "VEO 3.1: Mirror and laser static. Normal line and angle arcs fade in. Camera: static. Maintain structural integrity and consistency of the source image. No morphing. No hallucinating new objects.",
+      "movement_prompt": "VEO 3.1: The video must start exactly with the provided first frame and end exactly with the provided last frame. Mirror and laser static. Normal line and angle arcs fade in. Camera: static. The video must begin exactly with the provided first frame and end exactly with the provided last frame. Maintain structural integrity and consistency of the source image. No morphing. No hallucinating new objects.",
       "ingredient_names": ["mirror", "laser_beam", "normal_line"],
       "new_ingredient_names": ["normal_line"],
       "narration_text": "Narration for this shot.",
@@ -300,7 +310,7 @@ OUTPUT JSON (must match exactly):
     }}
   ]
 }}
-Use 3–6 shots with VARIED durations. Sum of duration_s = {target_duration_s}. Every shot MUST have last_frame_t2i_prompt (full T2I description of the end state). Every shot MUST have movement_prompt (VEO 3.1: how to animate from first to last). End each movement_prompt with the constraint sentence.
+Use 3–6 shots with VARIED durations. Sum of duration_s = {target_duration_s}. Every shot MUST have last_frame_t2i_prompt (full T2I description of the end state). Every shot MUST have movement_prompt (VEO 3.1: how to animate from first to last). Every movement_prompt MUST explicitly require that the video starts with the exact first frame and ends with the exact last frame; end each with the constraint sentence.
 """
 
     return _gemini_generate(system_prompt, user_prompt, planner_model)
@@ -313,12 +323,9 @@ def generate_audio_revision_json(main_script_15s: str, shots: list) -> str:
       - revised_narration: [ { shot_id, revised_text }, ... ]
       - sound_design: [ { shot_id, start_s, end_s, description }, ... ]
     """
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY not found in .env")
-
+    api_key = env_loader.require_env("OPENAI_API_KEY", "OpenAI is required for audio revision.")
     client = OpenAI(api_key=api_key)
-    model = (os.getenv("OPENAI_MODEL") or "gpt-4o").strip()
+    model = (env_loader.get_env("OPENAI_MODEL") or "gpt-4o").strip()
 
     shots_summary = []
     t = 0
