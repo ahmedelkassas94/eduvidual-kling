@@ -29,6 +29,10 @@ Thumbs.db
 projects/
 workflow_output/
 
+# Temporary / local scratch (do not commit)
+Untitled
+env
+
 # Temporary files
 *.tmp
 *.log
