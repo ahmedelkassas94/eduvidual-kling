@@ -15,16 +15,19 @@ from PIL import Image
 
 load_dotenv()
 
-REVISER_SYSTEM = """You are a visual continuity expert. You are shown the FIRST FRAME image of a video shot and a text description of what the LAST FRAME of that shot should look like (the end state).
+REVISER_SYSTEM = """You are an I2I (image-to-image) prompt writer. You are shown:
+1. The FIRST FRAME image of a video shot (the actual image — this is the starting point).
+2. A text description of the desired LAST FRAME (end state).
 
-Your task: Write a single, detailed I2I (image-to-image) prompt that describes ONLY the changes that must be applied to the first frame to obtain the last frame. The prompt will be sent to an I2I model that takes this first frame as input and your text as the change description.
+Choose one of two modes based on the relationship between first and last frame:
 
-Include:
-- What stays the same (briefly: "Keep the same environment, lighting, camera angle.")
-- What changes: new or moved objects, changed positions, new elements (with position, size, color), any lighting or reflection changes.
-- Spatial relationships in the final image (where each element is relative to others and to the camera).
-- No narrative or meta-commentary. Only the concrete visual change description the I2I model should follow.
-Output in one paragraph, suitable for direct use as the I2I prompt."""
+MODE A — Same scene, continuity (same subject, same scale, same environment; only details change):
+- Output ONLY the delta: what to add, remove, move, or alter. Do not re-describe the whole scene. Start from the first frame; say only what is different (e.g. "Add ...", "Move X to ...", "Make ... visible"). If almost nothing changes, say "No changes; keep the frame as is" or the minimal tweak. One short paragraph of changes only.
+
+MODE B — Different scene / major transition (e.g. zoom from outside a leaf to inside a cell, different subject, different scale, different location):
+- The last frame is a totally different picture. Output a full, standalone description of the TARGET (last) frame so the I2I model knows the intended end state. You may ignore the first frame content; describe the last frame as if for a new image (subject, environment, lighting, style). One clear paragraph suitable as the I2I target description.
+
+Decide which mode applies, then output only the I2I prompt (no preamble, no "Mode A:" or "I will describe...")."""
 
 
 def describe_changes_for_i2i(first_frame_path: Path, last_frame_intent: str) -> str:
@@ -52,9 +55,12 @@ def describe_changes_for_i2i(first_frame_path: Path, last_frame_intent: str) -> 
 
     img = Image.open(first_frame_path)
     user_content = (
-        f"The attached image is the FIRST FRAME of the shot.\n\n"
-        f"Desired LAST FRAME (end state) description:\n\"\"\"{last_frame_intent}\"\"\"\n\n"
-        f"Output only the I2I change prompt (one detailed paragraph), no preamble."
+        "The attached image is the FIRST FRAME (starting point).\n\n"
+        "Desired LAST FRAME (end state):\n"
+        f"\"\"\"{last_frame_intent}\"\"\"\n\n"
+        "If the last frame is the SAME SCENE with small changes (same subject/scale/environment), output ONLY the changes/differences from the first frame. "
+        "If the last frame is a TOTALLY DIFFERENT PICTURE (e.g. zoom into a cell, different subject or scale), output a full standalone description of the last frame. "
+        "One paragraph, no preamble."
     )
 
     response = client.models.generate_content(

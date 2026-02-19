@@ -16,7 +16,10 @@ from video_actions import (  # noqa: E402
     trim_video_to_duration,
 )
 from image_client import generate_image, generate_image_from_images  # noqa: E402
-from reviser import describe_changes_for_i2i, revise_i2v_prompt_for_exact_frames  # noqa: E402
+from reviser import (  # noqa: E402
+    describe_changes_for_i2i,
+    revise_i2v_prompt_for_exact_frames,
+)
 from scientific_revision import revise_frames_for_scientific_accuracy  # noqa: E402
 from frame_uploader import frame_to_public_url  # noqa: E402
 from wan_client import submit_wan_i2v_job, wait_for_wan_result, download_file  # noqa: E402
@@ -734,33 +737,29 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
             generate_image_from_images(prompt=i2i_prompt, image_paths=[current_first_frame_path], out_path=shot_last_frame_path)
             print(f"[OK] Last frame: {shot_last_frame_path.name}")
 
-        # Scientific revision: before I2V, check first+last frames for scientific accuracy
+        # Scientific revision (required): before I2V, check first+last frames for scientific accuracy
         if use_first_last_architecture and shot_last_frame_path.exists():
             shot_context = (shot.get("detailed_description") or "").strip() or movement_prompt[:300]
             print("\n[Scientific revision] Checking first + last frame for scientific accuracy (OpenAI)...")
-            try:
-                is_accurate, suggested_changes = revise_frames_for_scientific_accuracy(
-                    current_first_frame_path,
-                    shot_last_frame_path,
-                    shot_context,
-                    topic_hint=topic_hint,
+            is_accurate, suggested_changes = revise_frames_for_scientific_accuracy(
+                current_first_frame_path,
+                shot_last_frame_path,
+                shot_context,
+                topic_hint=topic_hint,
+            )
+            if not is_accurate and suggested_changes:
+                print("[Scientific revision] Last frame not fully accurate. Regenerating with corrections...")
+                base_prompt = describe_changes_for_i2i(current_first_frame_path, last_frame_t2i_prompt)
+                revised_prompt = f"{base_prompt} Apply these corrections for scientific accuracy: {suggested_changes}"
+                generate_image_from_images(
+                    prompt=revised_prompt,
+                    image_paths=[current_first_frame_path],
+                    out_path=shot_last_frame_path,
                 )
-                if not is_accurate and suggested_changes:
-                    print("[Scientific revision] Last frame not fully accurate. Regenerating with corrections...")
-                    base_prompt = describe_changes_for_i2i(current_first_frame_path, last_frame_t2i_prompt)
-                    revised_prompt = f"{base_prompt} Apply these corrections for scientific accuracy: {suggested_changes}"
-                    generate_image_from_images(
-                        prompt=revised_prompt,
-                        image_paths=[current_first_frame_path],
-                        out_path=shot_last_frame_path,
-                    )
-                    print("[OK] Last frame updated with scientific corrections.")
-                elif is_accurate:
-                    print("[Scientific revision] Frames are scientifically accurate.")
-            except Exception as e:
-                print(f"[WARN] Scientific revision skipped: {e}")
+                print("[OK] Last frame updated with scientific corrections.")
+            elif is_accurate:
+                print("[Scientific revision] Frames are scientifically accurate.")
 
-        # Revise I2V prompt so it explicitly requires video to start/end with exact first/last frame
         if use_first_last_architecture and shot_last_frame_path.exists() and (movement_prompt or "").strip():
             movement_prompt = revise_i2v_prompt_for_exact_frames(movement_prompt)
             print("[I2V prompt reviser] Revised movement_prompt to require exact first/last frame.")

@@ -1,7 +1,7 @@
 """
 Veo 3 Fast video generation via Gemini API.
 Supports image-to-video (I2V) with native audio.
-Veo 3.1 accepts multiple images: one as first frame (image) + up to 3 reference_images.
+Veo 3.1 accepts: first frame (image), optional last frame (config.last_frame), and up to 3 reference_images.
 Uses GEMINI_API_KEY (same as image_client).
 """
 import os
@@ -63,8 +63,8 @@ def submit_veo_i2v_job(
     """
     Submit a Veo image-to-video job.
     - image_path: first frame (required).
-    - last_frame_path: reserved for future use (start/end-frame control). Currently
-      ignored for Gemini API keys where this use case is not yet supported.
+    - last_frame_path: optional end frame; when provided, passed to Veo as config.last_frame
+      for first+last frame control (video transitions from first to last).
     - reference_image_paths: optional list of up to 3 additional images (Veo 3.1 "reference images")
       to guide content; no compositing needed.
     Returns an operation object; poll with wait_for_veo_result().
@@ -76,8 +76,9 @@ def submit_veo_i2v_job(
 
     # Veo 3.1: up to 3 reference images (no compositing)
     ref_paths = (reference_image_paths or [])[: VEO_MAX_REFERENCE_IMAGES]
-    # API requires duration_seconds="8" when using reference_images
-    duration_param = "8" if ref_paths else _duration_seconds(duration_s)
+    # API requires duration_seconds="8" when using reference_images or last_frame
+    use_last_frame = last_frame_path is not None and Path(last_frame_path).exists()
+    duration_param = "8" if (ref_paths or use_last_frame) else _duration_seconds(duration_s)
 
     config_kw: dict = {
         "aspect_ratio": aspect_ratio,
@@ -85,6 +86,9 @@ def submit_veo_i2v_job(
         "duration_seconds": duration_param,
         "negative_prompt": negative_prompt or None,
     }
+
+    if use_last_frame:
+        config_kw["lastFrame"] = _load_image_for_veo(Path(last_frame_path))
 
     if ref_paths:
         ref_images = []
@@ -101,6 +105,8 @@ def submit_veo_i2v_job(
     print("[Veo] I2V payload preview (Gemini API):")
     print(f"   Model: {model_name}")
     print(f"   Image (first frame): {image_path.name}")
+    if use_last_frame:
+        print(f"   Last frame: {Path(last_frame_path).name}")
     if ref_paths:
         print(f"   Reference images: {[Path(p).name for p in ref_paths]}")
     print(f"   Prompt length: {len(prompt)} chars")
@@ -125,13 +131,23 @@ def wait_for_veo_result(
     """
     Poll until the Veo operation is done.
     Returns (client, generated_video) so caller can save to path.
+    Raises RuntimeError with operation.error details when the job fails or returns no video.
     """
     deadline = time.time() + timeout_s
     while time.time() < deadline:
         if operation.done:
+            err = getattr(operation, "error", None)
+            if err is not None:
+                msg = getattr(err, "message", str(err))
+                raise RuntimeError(f"Veo operation failed: {msg}")
             result = getattr(operation, "result", None) or getattr(operation, "response", None)
             if not result or not getattr(result, "generated_videos", None):
-                raise RuntimeError("Veo operation finished but no video in response")
+                err_hint = f" (operation.error: {getattr(operation, 'error', None)})" if getattr(operation, "error", None) else ""
+                raise RuntimeError(
+                    "Veo operation finished but no video in response. "
+                    "This can happen due to content policy, invalid first/last frame, or API limits."
+                    f"{err_hint}"
+                )
             return client, result.generated_videos[0]
         time.sleep(poll_s)
         operation = client.operations.get(operation=operation)

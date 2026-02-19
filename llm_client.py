@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+from typing import Any, Dict
 
 import env_loader  # noqa: F401 - load .env from project root first
 from openai import OpenAI
@@ -44,6 +45,81 @@ def _gemini_generate(system_prompt: str, user_prompt: str, model: str) -> str:
             text = getattr(parts[0], "text", None)
     if not text:
         raise RuntimeError("Gemini planner returned empty response")
+    return text.strip()
+
+
+# ---------------------------------------------------------
+# Claude: I2V (movement_prompt) only
+# ---------------------------------------------------------
+CLAUDE_I2V_SYSTEM = """You are an expert at writing image-to-video (I2V) prompts for generative video models (e.g. Google Veo 3.1).
+
+Your ONLY task: Write a single movement_prompt that will be sent to the I2V model. The prompt must describe how the scene moves from the FIRST frame to the LAST frame of the shot.
+
+Requirements:
+- The generated video MUST start exactly with the provided first frame (no variation). The generated video MUST end exactly with the provided last frame (no variation). State this explicitly in the prompt.
+- Be extremely detailed: for every element give direction, speed, spatial relationships. If something is static, say "remains fixed at ...". Include camera motion.
+- End with: "The video must begin exactly with the provided first frame and end exactly with the provided last frame. Maintain structural integrity and consistency of the source image. No morphing. No hallucinating new objects."
+- Output ONLY the movement_prompt text. No preamble, no "Here is the prompt", no markdown."""
+
+
+def generate_i2v_prompt_claude(
+    shot: Dict[str, Any],
+    main_script_15s: str,
+    first_frame_context: str,
+) -> str:
+    """
+    Call Claude to write the I2V movement_prompt for one shot. Only I2V prompts are written by Claude.
+    first_frame_context: for shot 1 use project first_frame_t2i_prompt; for shot N use previous shot's last_frame_t2i_prompt.
+    """
+    api_key = env_loader.get_env("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise RuntimeError(
+            "ANTHROPIC_API_KEY is not set. Add it to .env to use Claude for I2V prompts. "
+            "Get a key at https://console.anthropic.com/"
+        )
+    try:
+        import anthropic
+    except ImportError:
+        raise RuntimeError("anthropic package required for Claude I2V prompts. pip install anthropic")
+
+    model = (env_loader.get_env("CLAUDE_MODEL") or "claude-sonnet-4-6").strip()
+    shot_id = shot.get("shot_id", 0)
+    detailed = (shot.get("detailed_description") or "").strip()
+    last_frame_t2i = (shot.get("last_frame_t2i_prompt") or "").strip()
+    duration_s = shot.get("duration_s", 3)
+    ingredient_names = shot.get("ingredient_names") or []
+
+    user_content = f"""Write the I2V movement_prompt for SHOT {shot_id}.
+
+MAIN SCRIPT (context):
+{main_script_15s[:2000]}
+
+FIRST FRAME context (scene at start of this shot — T2I description or previous shot's end state):
+{first_frame_context[:1500]}
+
+THIS SHOT:
+- detailed_description: {detailed}
+- last_frame_t2i_prompt (end state of shot): {last_frame_t2i[:1500]}
+- duration_s: {duration_s}
+- ingredient_names: {ingredient_names}
+
+Output only the movement_prompt text."""
+
+    client = anthropic.Anthropic(api_key=api_key)
+    msg = client.messages.create(
+        model=model,
+        max_tokens=1024,
+        system=CLAUDE_I2V_SYSTEM,
+        messages=[{"role": "user", "content": user_content}],
+    )
+    text = ""
+    if msg.content and isinstance(msg.content, list):
+        for block in msg.content:
+            if getattr(block, "type", None) == "text":
+                text = getattr(block, "text", "") or ""
+                break
+    if not text or not text.strip():
+        raise RuntimeError("Claude returned empty I2V movement_prompt")
     return text.strip()
 
 
@@ -229,11 +305,11 @@ ARCHITECTURE (first frame + last frame per shot, I2V between them):
 - Each shot has a FIRST frame and a LAST frame. Both are generated via T2I (or last frame via I2I using the first frame as input for continuity).
 - Shot 1: first frame = T2I(first_frame_t2i_prompt). Last frame = T2I(last_frame_t2i_prompt) or I2I(first_frame, reviser-described changes). I2V animates from first to last.
 - Shot 2+: first frame = last frame of the previous shot (continuity). Last frame = T2I(last_frame_t2i_prompt) or I2I(first_frame, reviser-described changes). I2V animates from first to last.
-- So you must output: (1) first_frame_t2i_prompt (shot 1 only, project-level), (2) for EVERY shot: last_frame_t2i_prompt (full T2I description of the end state) and movement_prompt (how I2V gets from first to last).
+- So you must output: (1) first_frame_t2i_prompt (shot 1 only, project-level), (2) for EVERY shot: last_frame_t2i_prompt (full T2I description of the end state). Do NOT write movement_prompt: set it to empty string "" for every shot. I2V (movement) prompts are written separately by Claude.
 
 TARGET MODELS:
 - first_frame_t2i_prompt and last_frame_t2i_prompt: GOOGLE GEMINI 2.5 (text-to-image). Same detail level: environment, every object, spatial relationships. last_frame_t2i_prompt describes the END state of the shot (what the final still should look like).
-- movement_prompt: GOOGLE VEO 3.1 (image-to-video). Describes how the scene moves from the first frame to the last frame. CRITICAL: The generated video MUST start exactly with the provided first frame (first frame of the clip must match the input image exactly, no variation) and MUST end exactly with the provided last frame (final frame of the clip must match the target end-state image exactly). Be extremely detailed so Veo 3.1 understands exactly what to animate: direction, speed, timing, spatial relationships. If something is static, say so explicitly. Describe camera motion clearly. Always explicitly state that the video must begin with the exact first frame and end with the exact last frame.
+- movement_prompt: Leave as "" for every shot. Claude will fill these later for VEO 3.1 (image-to-video).
 
 TOPIC:
 \"\"\"{prompt}\"\"\"
@@ -251,7 +327,7 @@ ARCHITECTURE (follow exactly):
 
 4. SHOTS: Each shot has: time_range, duration_s, detailed_description, last_frame_t2i_prompt, movement_prompt, ingredient_names, new_ingredient_names, narration_text, on_screen_text_overlay.
    - last_frame_t2i_prompt: FULL T2I prompt for the END state of this shot (for Gemini 2.5). Same detail as first_frame_t2i_prompt: environment, every object in final positions, spatial relationships, lighting. This image becomes the first frame of the next shot.
-   - movement_prompt is sent to VEO 3.1. It MUST be VERY LONG and DETAILED: how the scene moves from the first frame to the last frame. You MUST explicitly require: the generated video must START with the exact first frame (the first frame of the output must match the provided first-frame image exactly) and END with the exact last frame (the final frame must match the provided last-frame image exactly). For every item: start position, end position, path, speed, spatial relationship. If static, say "remains fixed at ...". Include camera motion. End with: "The video must begin exactly with the provided first frame and end exactly with the provided last frame. Maintain structural integrity and consistency of the source image. No morphing. No hallucinating new objects."
+   - movement_prompt: Set to "" (empty string) for every shot. Do not write I2V prompts; Claude will generate them separately.
 
 RULES:
 - Total duration MUST be exactly {target_duration_s} seconds. Sum of shot duration_s = {target_duration_s}.
@@ -288,7 +364,7 @@ OUTPUT JSON (must match exactly):
       "duration_s": 4,
       "detailed_description": "What happens in this shot.",
       "last_frame_t2i_prompt": "Same environment as first frame. Mirror: center-right, vertical, static. Laser beam: now visible hitting mirror at center and reflected beam visible on the other side, same lighting and style. Camera position unchanged. Professional scientific illustration, 8k.",
-      "movement_prompt": "VEO 3.1: The video must start exactly with the provided first frame and end exactly with the provided last frame. Mirror: static. Laser beam: moves left to right toward mirror; reaches mirror center by end. Camera: slow dolly-in. The video must begin exactly with the provided first frame and end exactly with the provided last frame. Maintain structural integrity and consistency of the source image. No morphing. No hallucinating new objects.",
+      "movement_prompt": "",
       "ingredient_names": ["mirror", "laser_beam"],
       "new_ingredient_names": [],
       "narration_text": "Narration for this shot.",
@@ -301,7 +377,7 @@ OUTPUT JSON (must match exactly):
       "duration_s": 3,
       "detailed_description": "Normal line and angle arcs appear.",
       "last_frame_t2i_prompt": "Same scene. Mirror and laser unchanged. NEW: thin dashed normal line perpendicular to mirror at reflection point; two small angle arcs with arrowheads. Same style and lighting.",
-      "movement_prompt": "VEO 3.1: The video must start exactly with the provided first frame and end exactly with the provided last frame. Mirror and laser static. Normal line and angle arcs fade in. Camera: static. The video must begin exactly with the provided first frame and end exactly with the provided last frame. Maintain structural integrity and consistency of the source image. No morphing. No hallucinating new objects.",
+      "movement_prompt": "",
       "ingredient_names": ["mirror", "laser_beam", "normal_line"],
       "new_ingredient_names": ["normal_line"],
       "narration_text": "Narration for this shot.",
@@ -310,7 +386,7 @@ OUTPUT JSON (must match exactly):
     }}
   ]
 }}
-Use 3–6 shots with VARIED durations. Sum of duration_s = {target_duration_s}. Every shot MUST have last_frame_t2i_prompt (full T2I description of the end state). Every shot MUST have movement_prompt (VEO 3.1: how to animate from first to last). Every movement_prompt MUST explicitly require that the video starts with the exact first frame and ends with the exact last frame; end each with the constraint sentence.
+Use 3–6 shots with VARIED durations. Sum of duration_s = {target_duration_s}. Every shot MUST have last_frame_t2i_prompt (full T2I description of the end state). Every shot MUST have movement_prompt set to "" (empty string); Claude will fill I2V prompts separately.
 """
 
     return _gemini_generate(system_prompt, user_prompt, planner_model)

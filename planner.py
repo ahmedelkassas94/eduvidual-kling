@@ -10,7 +10,7 @@ try:
 except ImportError:
     pass  # use built-in print
 
-from llm_client import generate_clip_plan_json, generate_ingredients_plan_json
+from llm_client import generate_clip_plan_json, generate_ingredients_plan_json, generate_i2v_prompt_claude
 from schemes import ProjectState, StyleBible, ImageFrame, Ingredient, ScriptShot
 
 
@@ -39,7 +39,7 @@ def _strip_json_markdown(raw: str) -> str:
 
 
 def ai_plan_ingredients(prompt: str, target_duration_s: int = 15) -> ProjectState:
-    """New architecture: 15s shot-by-shot script + named ingredients."""
+    """New architecture: 15s shot-by-shot script + named ingredients. Gemini writes script/T2I; Claude writes I2V prompts only."""
     raw = generate_ingredients_plan_json(prompt, target_duration_s)
     raw = _strip_json_markdown(raw)
 
@@ -48,9 +48,20 @@ def ai_plan_ingredients(prompt: str, target_duration_s: int = 15) -> ProjectStat
     except json.JSONDecodeError:
         raise ValueError("LLM did not return valid JSON. Run again.")
 
+    main_script = data.get("main_script_15s", "")
+    first_frame_t2i = data.get("first_frame_t2i_prompt", "")
+    shots_data = data.get("shots", [])
+
+    env_loader.require_env("ANTHROPIC_API_KEY", "I2V prompts are written by Claude. Add ANTHROPIC_API_KEY to .env (https://console.anthropic.com/).")
+
+    # Claude writes I2V (movement_prompt) for each shot; Gemini left them empty
+    for i, shot in enumerate(shots_data):
+        first_context = first_frame_t2i if i == 0 else (shots_data[i - 1].get("last_frame_t2i_prompt") or "")
+        shot["movement_prompt"] = generate_i2v_prompt_claude(shot, main_script, first_context)
+
     style = StyleBible(**data["style_bible"])
     ingredients = [Ingredient(**ing) for ing in data["ingredients"]]
-    shots = [ScriptShot(**s) for s in data["shots"]]
+    shots = [ScriptShot(**s) for s in shots_data]
 
     state = ProjectState(
         project_id=str(uuid.uuid4())[:8],
