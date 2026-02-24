@@ -295,81 +295,121 @@ def _make_black_clip(out_file: Path, duration_s: int) -> None:
 # ---------------------------------------------------------
 # IMAGE-BASED ANIMATION HELPERS
 # ---------------------------------------------------------
-def trim_video_to_duration(video_path: Path, target_duration_s: float, output_path: Optional[Path] = None) -> Path:
+def trim_video_to_duration(
+    video_path: Path,
+    target_duration_s: float,
+    output_path: Optional[Path] = None,
+    *,
+    keep_end: bool = False,
+) -> Path:
     """
     Trim a video to an exact duration using ffmpeg.
     If output_path is None, uses a temporary file then replaces the original.
+    When keep_end is True, keeps the *last* target_duration_s seconds (trims from start).
+    Use keep_end=True for first+last frame Veo clips so the video ends on the provided last frame.
     """
-    if not video_path.exists():
+    path = Path(video_path).resolve()
+    if not path.exists():
         raise FileNotFoundError(f"Video not found: {video_path}")
-    
+
     ffmpeg = _ffmpeg_exe()
-    
-    # Check actual video duration first
+
+    # Probe duration (ffmpeg may exit non-zero e.g. 8 on some builds but still print duration to stdout)
     probe_cmd = [
         ffmpeg,
-        "-i", video_path.as_posix(),
+        "-i", str(path),
         "-show_entries", "format=duration",
         "-v", "quiet",
         "-of", "csv=p=0",
     ]
+    actual_duration = None
     try:
-        result = subprocess.run(probe_cmd, capture_output=True, text=True, check=True, timeout=10)
-        actual_duration = float(result.stdout.strip())
-        
-        # If video is already close to target duration (within 0.1s), skip trimming
-        if abs(actual_duration - target_duration_s) < 0.1:
-            print(f"[INFO] Video duration ({actual_duration:.2f}s) already matches target ({target_duration_s}s), skipping trim")
-            return video_path
-    except (subprocess.CalledProcessError, ValueError, subprocess.TimeoutExpired) as e:
+        result = subprocess.run(probe_cmd, capture_output=True, text=True, timeout=10, cwd=path.parent)
+        if result.stdout and result.stdout.strip():
+            try:
+                actual_duration = float(result.stdout.strip())
+            except ValueError:
+                pass
+        if actual_duration is not None and actual_duration > 0:
+            if abs(actual_duration - target_duration_s) < 0.1:
+                print(f"[INFO] Video duration ({actual_duration:.2f}s) already matches target ({target_duration_s}s), skipping trim")
+                return path
+    except subprocess.TimeoutExpired:
+        print(f"[WARN] Video duration probe timed out. Proceeding with trim anyway...")
+    except Exception as e:
         print(f"[WARN] Could not probe video duration: {e}. Proceeding with trim anyway...")
-    
+
     # Use temporary file to avoid overwriting input while reading
     if output_path is None:
-        temp_path = video_path.parent / f"{video_path.stem}_temp{video_path.suffix}"
+        temp_path = path.parent / f"{path.stem}_temp{path.suffix}"
         out_path = temp_path
     else:
-        out_path = output_path
-    
-    # Try stream copy first (fast, no re-encoding)
-    cmd = [
-        ffmpeg,
-        "-y",
-        "-i", video_path.as_posix(),
-        "-t", str(target_duration_s),
-        "-c", "copy",  # Use stream copy for speed (no re-encoding)
-        "-avoid_negative_ts", "make_zero",  # Handle timestamp issues
-        out_path.as_posix(),
-    ]
-    
-    try:
-        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
-    except subprocess.CalledProcessError:
-        # If stream copy fails (e.g., keyframe issues), re-encode
-        print(f"[WARN] Stream copy trim failed, re-encoding...")
+        out_path = Path(output_path).resolve()
+
+    if keep_end:
+        # Keep last N seconds: start reading target_duration_s before end (-sseof -N), output N seconds
+        cmd = [
+            ffmpeg,
+            "-y",
+            "-sseof", f"-{target_duration_s}",
+            "-i", str(path),
+            "-t", str(target_duration_s),
+            "-c", "copy",
+            "-avoid_negative_ts", "make_zero",
+            str(out_path),
+        ]
         cmd_reencode = [
             ffmpeg,
             "-y",
-            "-i", video_path.as_posix(),
+            "-sseof", f"-{target_duration_s}",
+            "-i", str(path),
             "-t", str(target_duration_s),
             "-c:v", "libx264",
             "-pix_fmt", "yuv420p",
-            "-c:a", "aac",  # Re-encode audio too for compatibility
+            "-c:a", "aac",
             "-b:a", "128k",
             "-avoid_negative_ts", "make_zero",
-            out_path.as_posix(),
+            str(out_path),
         ]
+    else:
+        # Keep first N seconds (default)
+        cmd = [
+            ffmpeg,
+            "-y",
+            "-i", str(path),
+            "-t", str(target_duration_s),
+            "-c", "copy",
+            "-avoid_negative_ts", "make_zero",
+            str(out_path),
+        ]
+        cmd_reencode = [
+            ffmpeg,
+            "-y",
+            "-i", str(path),
+            "-t", str(target_duration_s),
+            "-c:v", "libx264",
+            "-pix_fmt", "yuv420p",
+            "-c:a", "aac",
+            "-b:a", "128k",
+            "-avoid_negative_ts", "make_zero",
+            str(out_path),
+        ]
+
+    try:
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
+    except subprocess.CalledProcessError:
+        print(f"[WARN] Stream copy trim failed, re-encoding...")
         subprocess.run(cmd_reencode, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120)
     except subprocess.TimeoutExpired:
-        raise RuntimeError(f"FFmpeg trim operation timed out for {video_path}")
-    
+        raise RuntimeError(f"FFmpeg trim operation timed out for {path}")
+
     # If we used a temp file, replace the original
     if output_path is None:
         import shutil
-        video_path.unlink()  # Remove original
-        shutil.move(out_path, video_path)  # Move temp to original location
-        return video_path
-    
+        path.unlink(missing_ok=True)
+        shutil.move(str(out_path), str(path))
+        return path
+
     return out_path
 
 

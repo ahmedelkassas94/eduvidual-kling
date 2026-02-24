@@ -50,8 +50,12 @@ class ScriptShot(BaseModel):
         default_factory=list,
         description="Ingredient names introduced in THIS shot (not in previous shots). Empty for shot 1.",
     )
-    narration_text: str = Field("", description="Narration spoken during this shot.")
+    narration_text: str = Field("", description="Narration spoken during this shot (explaining the content).")
     on_screen_text_overlay: str = Field("none", description='Short on-screen text or "none".')
+    assisting_visual_aids: str = Field(
+        "",
+        description="Assisting visual aids for this shot when they serve the video: arrows, highlights, text boxes, text labels. Empty or 'none' when not needed.",
+    )
     i2i_spatial_prompt: str = Field(
         "",
         description="Legacy: I2I spatial prompt for shot 1 first frame. Unused when first_frame_t2i_prompt is set.",

@@ -13,12 +13,15 @@ from video_actions import (  # noqa: E402
     generate_placeholder_video,
     is_video_valid,
     extract_last_frame,
-    trim_video_to_duration,
 )
 from image_client import generate_image, generate_image_from_images  # noqa: E402
 from reviser import (  # noqa: E402
     describe_changes_for_i2i,
     revise_i2v_prompt_for_exact_frames,
+    revise_first_frame_for_context,
+    revise_shot_frames_for_context,
+    verify_i2v_prompt_matches_frames,
+    fix_i2v_prompt_and_last_frame,
 )
 from scientific_revision import revise_frames_for_scientific_accuracy  # noqa: E402
 from frame_uploader import frame_to_public_url  # noqa: E402
@@ -37,6 +40,29 @@ from tts_client import (  # noqa: E402
     DEFAULT_SPEED,
 )
 from compositor import composite_images  # noqa: E402
+from llm_client import generate_i2v_prompt_claude, revise_i2v_prompt_for_length  # noqa: E402
+
+
+# ---------------------------------------------------------
+# VIDEO CONTEXT (prepend to T2I / I2I / I2V so the model knows shot + full script)
+# ---------------------------------------------------------
+def _add_video_context_to_prompt(
+    main_prompt: str,
+    shot_id: int,
+    total_shots: int,
+    main_script: str,
+    kind: str = "image",
+) -> str:
+    """Prepend a context block so the model knows this is shot X of a longer video and has the full script for context. Main prompt structure stays the same."""
+    if not main_script or not main_prompt:
+        return main_prompt
+    script_preview = (main_script.strip()[:3000] + "..." if len(main_script) > 3000 else main_script.strip())
+    medium = "video segment" if kind == "video" else "image"
+    context = (
+        f"[CONTEXT: This {medium} is part of a longer educational video. "
+        f"This is shot {shot_id} of {total_shots}. Full script (for context only):\n\n{script_preview}\n\nEND CONTEXT.]\n\n"
+    )
+    return context + main_prompt
 
 
 # ---------------------------------------------------------
@@ -580,6 +606,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                     style_prefix = f"STYLE: {vs}\n\n"
             style_suffix = (style_bible.get("style_suffix") or "").strip() if style_bible else ""
             full_prompt = style_prefix + first_frame_t2i_prompt + (" " + style_suffix if style_suffix else "")
+            full_prompt = _add_video_context_to_prompt(full_prompt, 1, len(shots), main_script, "image")
             print("\n" + "-" * 78)
             print("FIRST FRAME T2I PROMPT — REVIEW & APPROVE")
             print("-" * 78)
@@ -592,6 +619,27 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
             print("\n[T2I] Generating first frame (single prompt)...")
             generate_image(full_prompt, shot_1_first_frame_path)
             print("[OK] First frame ready.")
+
+            # Context reviser: check if first frame fits the video narrative
+            video_objective = (state.get("user_prompt") or "").strip()
+            if main_script and video_objective:
+                print("\n[Context reviser] Checking if first frame fits video context...")
+                try:
+                    fits_context, context_changes = revise_first_frame_for_context(
+                        shot_1_first_frame_path,
+                        main_script,
+                        video_objective,
+                    )
+                    if not fits_context and context_changes:
+                        print(f"[Context reviser] First frame needs changes: {context_changes[:200]}...")
+                        revised_prompt = f"{style_prefix + first_frame_t2i_prompt + (' ' + style_suffix if style_suffix else '')} Apply these changes: {context_changes}"
+                        revised_prompt = _add_video_context_to_prompt(revised_prompt, 1, len(shots), main_script, "image")
+                        generate_image(revised_prompt, shot_1_first_frame_path)
+                        print("[OK] First frame regenerated with context corrections.")
+                    elif fits_context:
+                        print("[Context reviser] First frame fits the video context.")
+                except Exception as e:
+                    print(f"[WARN] Context reviser skipped: {e}")
         else:
             print(f"[REUSE] Reusing first frame: {shot_1_first_frame_path.name}")
     else:
@@ -622,6 +670,8 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                 style_prefix = (f"STYLE: {style_bible.get('visual_style', '')}\n\n" if style_bible and style_bible.get("visual_style") else "")
                 style_suffix = (style_bible.get("style_suffix") or "").strip() if style_bible else ""
                 full_prompt = style_prefix + prompt + (" " + style_suffix if style_suffix else "")
+                if main_script and shots:
+                    full_prompt = _add_video_context_to_prompt(full_prompt, 1, len(shots), main_script, "image")
                 print(f"\n[IMG] INGREDIENT '{name}' T2I — REVIEW & APPROVE")
                 print("-" * 78)
                 print(full_prompt)
@@ -643,11 +693,18 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
     previous_shot_last_path: Optional[Path] = None  # In first+last arch: last frame of previous shot = first of next
     use_veo = video_backend == "veo"
     topic_hint = (state.get("user_prompt") or "").strip()[:500]  # For scientific revision context
+    # Track last successful I2V prompt length (for fallback revisions when Veo returns no video)
+    last_successful_i2v_prompt_len: int = 0
 
     for idx, shot in enumerate(shots):
         shot_id = int(shot.get("shot_id", idx + 1))
         duration_s = int(shot.get("duration_s", 3))
         movement_prompt = (shot.get("movement_prompt") or "").strip()
+        # Generate I2V movement_prompt at run time if not in plan (planner leaves it empty)
+        if not movement_prompt and main_script:
+            first_context = (state.get("first_frame_t2i_prompt") or "").strip() if idx == 0 else (shots[idx - 1].get("last_frame_t2i_prompt") or "").strip()
+            print(f"[I2V] Generating movement prompt for shot {shot_id} (Claude)...")
+            movement_prompt = generate_i2v_prompt_claude(shot, main_script, first_context)
         last_frame_t2i_prompt = (shot.get("last_frame_t2i_prompt") or "").strip()
         ingredient_names = shot.get("ingredient_names") or []
         new_ingredient_names = shot.get("new_ingredient_names") or []
@@ -696,10 +753,11 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                 i2i_spatial_prompt = (shot.get("i2i_spatial_prompt") or "").strip()
                 first_frame_path = frames_dir / f"shot_{shot_id:03d}_first.png"
                 if i2i_spatial_prompt:
+                    i2i_with_ctx = _add_video_context_to_prompt(i2i_spatial_prompt, 1, len(shots), main_script, "image") if (main_script and shots) else i2i_spatial_prompt
                     print("\nSHOT 1 — I2I SPATIAL PROMPT (REVIEW & APPROVE)")
-                    print(i2i_spatial_prompt)
+                    print(i2i_with_ctx)
                     _require_approval(prompt_text="Type APPROVE to generate shot 1 via I2I.", skip_message="Not approved. Exiting.", allow_auto=True)
-                    generate_image_from_images(prompt=i2i_spatial_prompt, image_paths=ingredient_image_paths, out_path=first_frame_path)
+                    generate_image_from_images(prompt=i2i_with_ctx, image_paths=ingredient_image_paths, out_path=first_frame_path)
                 else:
                     composite_images(ingredient_image_paths, first_frame_path)
                 current_first_frame_path = first_frame_path
@@ -720,22 +778,64 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
         if not current_first_frame_path or not current_first_frame_path.exists():
             raise RuntimeError(f"Shot {shot_id}: no first frame available")
 
-        # Generate last frame for this shot (first+last architecture): always I2I from first frame for continuity
+        # Generate last frame for this shot (first+last architecture): always I2I from first frame for continuity.
+        # When planner omits last_frame_t2i_prompt, use fallback so every shot has a last frame (first+last style).
+        if use_first_last_architecture and not shot_last_frame_path.exists() and not last_frame_t2i_prompt:
+            last_frame_t2i_prompt = (
+                (shot.get("detailed_description") or shot.get("movement_prompt") or "Same scene; end state consistent with the shot narrative.")
+            ).strip()
         if use_first_last_architecture and last_frame_t2i_prompt and not shot_last_frame_path.exists():
             print("\n" + "-" * 78)
             print(f"SHOT {shot_id} — LAST FRAME (I2I from first frame)")
             print("-" * 78)
-            print(f"Intent:\n{last_frame_t2i_prompt[:600]}{'...' if len(last_frame_t2i_prompt) > 600 else ''}")
+            print(f"Intent (last frame description):\n{last_frame_t2i_prompt}")
+            print("-" * 78)
+            print("[Reviser] Analyzing first frame and generating I2I prompt...")
+            i2i_prompt = describe_changes_for_i2i(current_first_frame_path, last_frame_t2i_prompt)
+            print(f"\nI2I PROMPT (imperative changes):\n{i2i_prompt}")
+            print("-" * 78)
             _require_approval(
-                prompt_text=f"Type APPROVE to generate shot {shot_id} last frame (I2I).",
+                prompt_text=f"Type APPROVE to generate shot {shot_id} last frame with this I2I prompt.",
                 skip_message="Last frame not approved. Exiting.",
                 allow_auto=True,
             )
-            print("[Reviser] Describing changes from first frame to last frame...")
-            i2i_prompt = describe_changes_for_i2i(current_first_frame_path, last_frame_t2i_prompt)
             print(f"[I2I] Generating last frame from first frame...")
-            generate_image_from_images(prompt=i2i_prompt, image_paths=[current_first_frame_path], out_path=shot_last_frame_path)
+            i2i_with_context = _add_video_context_to_prompt(i2i_prompt, shot_id, len(shots), main_script, "image")
+            generate_image_from_images(prompt=i2i_with_context, image_paths=[current_first_frame_path], out_path=shot_last_frame_path)
             print(f"[OK] Last frame: {shot_last_frame_path.name}")
+
+        # Context reviser: check if first+last frames fit the video narrative (changes to last frame only)
+        video_objective = (state.get("user_prompt") or "").strip()
+        if use_first_last_architecture and shot_last_frame_path.exists() and main_script and video_objective:
+            print(f"\n[Context reviser] Checking if shot {shot_id} frames fit video context...")
+            try:
+                fits_context, context_changes = revise_shot_frames_for_context(
+                    current_first_frame_path,
+                    shot_last_frame_path,
+                    shot_id,
+                    len(shots),
+                    main_script,
+                    video_objective,
+                )
+                if not fits_context and context_changes:
+                    print(f"[Context reviser] Last frame needs changes: {context_changes[:200]}...")
+                    combined_intent = (
+                        last_frame_t2i_prompt
+                        + "\n\nRequired context corrections (incorporate into your I2I prompt in imperative form, using the first frame): "
+                        + context_changes
+                    )
+                    revised_prompt = describe_changes_for_i2i(current_first_frame_path, combined_intent)
+                    revised_prompt = _add_video_context_to_prompt(revised_prompt, shot_id, len(shots), main_script, "image")
+                    generate_image_from_images(
+                        prompt=revised_prompt,
+                        image_paths=[current_first_frame_path],
+                        out_path=shot_last_frame_path,
+                    )
+                    print("[OK] Last frame regenerated with context corrections.")
+                elif fits_context:
+                    print("[Context reviser] Shot frames fit the video context.")
+            except Exception as e:
+                print(f"[WARN] Context reviser skipped: {e}")
 
         # Scientific revision (required): before I2V, check first+last frames for scientific accuracy
         if use_first_last_architecture and shot_last_frame_path.exists():
@@ -749,8 +849,13 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
             )
             if not is_accurate and suggested_changes:
                 print("[Scientific revision] Last frame not fully accurate. Regenerating with corrections...")
-                base_prompt = describe_changes_for_i2i(current_first_frame_path, last_frame_t2i_prompt)
-                revised_prompt = f"{base_prompt} Apply these corrections for scientific accuracy: {suggested_changes}"
+                combined_intent = (
+                    last_frame_t2i_prompt
+                    + "\n\nRequired corrections for scientific accuracy (incorporate into your I2I prompt in imperative form, using the first frame): "
+                    + suggested_changes
+                )
+                revised_prompt = describe_changes_for_i2i(current_first_frame_path, combined_intent)
+                revised_prompt = _add_video_context_to_prompt(revised_prompt, shot_id, len(shots), main_script, "image")
                 generate_image_from_images(
                     prompt=revised_prompt,
                     image_paths=[current_first_frame_path],
@@ -763,6 +868,53 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
         if use_first_last_architecture and shot_last_frame_path.exists() and (movement_prompt or "").strip():
             movement_prompt = revise_i2v_prompt_for_exact_frames(movement_prompt)
             print("[I2V prompt reviser] Revised movement_prompt to require exact first/last frame.")
+
+        # I2V prompt-to-frames verification: check if prompt correctly describes visual transition
+        video_objective = (state.get("user_prompt") or "").strip()
+        if use_first_last_architecture and shot_last_frame_path.exists() and (movement_prompt or "").strip():
+            print("\n[I2V verification] Checking if movement prompt matches visual transition...")
+            try:
+                prompt_matches, issues_found = verify_i2v_prompt_matches_frames(
+                    current_first_frame_path,
+                    shot_last_frame_path,
+                    movement_prompt,
+                )
+                if prompt_matches:
+                    print("[I2V verification] Movement prompt correctly describes the frame transition.")
+                else:
+                    print(f"[I2V verification] Issues found: {issues_found}")
+                    print("[I2V verification] Analyzing fixes needed (prompt, last frame, or both)...")
+                    fixes = fix_i2v_prompt_and_last_frame(
+                        current_first_frame_path,
+                        shot_last_frame_path,
+                        movement_prompt,
+                        issues_found or "",
+                        main_script,
+                        video_objective,
+                    )
+                    if fixes["fix_last_frame"] and fixes["last_frame_changes"]:
+                        print(f"[I2V verification] Regenerating last frame with changes: {fixes['last_frame_changes'][:200]}...")
+                        combined_intent = (
+                            last_frame_t2i_prompt
+                            + "\n\nRequired corrections (incorporate into your I2I prompt in imperative form, using the first frame): "
+                            + fixes["last_frame_changes"]
+                        )
+                        revised_prompt = describe_changes_for_i2i(current_first_frame_path, combined_intent)
+                        revised_prompt = _add_video_context_to_prompt(revised_prompt, shot_id, len(shots), main_script, "image")
+                        generate_image_from_images(
+                            prompt=revised_prompt,
+                            image_paths=[current_first_frame_path],
+                            out_path=shot_last_frame_path,
+                        )
+                        print("[OK] Last frame regenerated based on I2V verification feedback.")
+                    if fixes["fix_prompt"] and fixes["prompt_revision"]:
+                        print(f"[I2V verification] Updating movement prompt...")
+                        movement_prompt = fixes["prompt_revision"]
+                        print(f"[OK] Movement prompt revised:\n{movement_prompt[:300]}...")
+                    if not fixes["fix_last_frame"] and not fixes["fix_prompt"]:
+                        print("[WARN] No fixes provided despite issues found. Proceeding with original.")
+            except Exception as e:
+                print(f"[WARN] I2V verification skipped: {e}")
 
         # Only upload for Wan (Veo uses local paths)
         if use_veo:
@@ -812,25 +964,75 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                         print(f"[WARN] (DRY_RUN) Narration failed: {e}")
             continue
 
-        # Real I2V
+        # Real I2V — first+last architecture always uses last frame (no first-frame-only for later shots)
+        if use_first_last_architecture and not shot_last_frame_path.exists():
+            raise RuntimeError(
+                f"Shot {shot_id}: first+last architecture requires a last frame at {shot_last_frame_path.name}; "
+                "it was not generated. Ensure last frame is created before I2V."
+            )
         print(f"\n[I2V] Shot {shot_id} -> {out_mp4.name} (duration={duration_s}s)")
+        # I2V: use raw movement_prompt (no context) to avoid very long prompts that can cause Veo "no video in response"
+        i2v_prompt_with_context = (movement_prompt or "").strip()
         try:
             if use_veo:
-                client, operation = submit_veo_i2v_job(
-                    prompt=movement_prompt,
-                    image_path=current_first_frame_path,
-                    duration_s=duration_s,
-                    last_frame_path=shot_last_frame_path if (use_first_last_architecture and shot_last_frame_path.exists()) else None,
-                    reference_image_paths=veo_reference_paths if veo_reference_paths else None,
-                    aspect_ratio="16:9",
-                    resolution=(os.getenv("VEO_RESOLUTION") or "720p").strip(),
-                    negative_prompt="logos, watermarks, people, human, face, hands",
-                )
-                client, generated_video = wait_for_veo_result(client, operation)
-                save_veo_video(client, generated_video, out_mp4)
+                try:
+                    # First attempt: use the movement_prompt as-is
+                    client, operation = submit_veo_i2v_job(
+                        prompt=i2v_prompt_with_context,
+                        image_path=current_first_frame_path,
+                        duration_s=duration_s,
+                        last_frame_path=shot_last_frame_path if use_first_last_architecture else None,
+                        reference_image_paths=veo_reference_paths if veo_reference_paths else None,
+                        aspect_ratio="16:9",
+                        resolution=(os.getenv("VEO_RESOLUTION") or "720p").strip(),
+                        negative_prompt="logos, watermarks, people, human, face, hands",
+                    )
+                    client, generated_video = wait_for_veo_result(client, operation)
+                    save_veo_video(client, generated_video, out_mp4)
+                    if i2v_prompt_with_context:
+                        last_successful_i2v_prompt_len = len(i2v_prompt_with_context)
+                except RuntimeError as veo_err:
+                    msg = str(veo_err)
+                    # Specific fallback: when Veo finishes without a video (content policy / API limits),
+                    # try a single prompt revision that shortens/refines the movement_prompt based on the
+                    # length of the last successful I2V prompt.
+                    if (
+                        "no video in response" in msg
+                        and last_successful_i2v_prompt_len > 0
+                        and i2v_prompt_with_context
+                    ):
+                        print("[I2V] Veo returned 'no video in response'; revising movement prompt for length and retrying once...")
+                        try:
+                            revised_prompt = revise_i2v_prompt_for_length(
+                                original_prompt=i2v_prompt_with_context,
+                                main_script_15s=main_script,
+                                shot=shot,
+                                max_chars=last_successful_i2v_prompt_len,
+                            )
+                            i2v_prompt_with_context = revised_prompt.strip()
+                            client, operation = submit_veo_i2v_job(
+                                prompt=i2v_prompt_with_context,
+                                image_path=current_first_frame_path,
+                                duration_s=duration_s,
+                                last_frame_path=shot_last_frame_path if use_first_last_architecture else None,
+                                reference_image_paths=veo_reference_paths if veo_reference_paths else None,
+                                aspect_ratio="16:9",
+                                resolution=(os.getenv("VEO_RESOLUTION") or "720p").strip(),
+                                negative_prompt="logos, watermarks, people, human, face, hands",
+                            )
+                            client, generated_video = wait_for_veo_result(client, operation)
+                            save_veo_video(client, generated_video, out_mp4)
+                            if i2v_prompt_with_context:
+                                last_successful_i2v_prompt_len = len(i2v_prompt_with_context)
+                            print("[I2V] Retry with revised movement prompt succeeded.")
+                        except Exception as revise_err:
+                            print(f"[I2V] Prompt revision retry failed: {revise_err}")
+                            raise veo_err
+                    else:
+                        raise
             else:
                 task_id = submit_wan_i2v_job(
-                    prompt=movement_prompt,
+                    prompt=i2v_prompt_with_context,
                     first_frame_url=current_first_frame_url,
                     duration_s=duration_s,
                     resolution=os.getenv("WAN_I2V_RESOLUTION") or "720P",
@@ -842,9 +1044,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                 video_url = wait_for_wan_result(task_id)
                 download_file(video_url, out_mp4)
 
-            need_trim = (use_veo and duration_s not in (4, 6, 8)) or (not use_veo and duration_s not in (5, 10))
-            if need_trim:
-                trim_video_to_duration(out_mp4, duration_s)
+            # No trimming: keep video at original API duration for all backends (Veo, Wan, etc.)
 
             if use_first_last_architecture and shot_last_frame_path.exists():
                 previous_shot_last_path = shot_last_frame_path
@@ -1106,11 +1306,8 @@ def run_project(project_dir: Path) -> None:
                 video_url = wait_for_wan_result(task_id)
                 download_file(video_url, out_mp4)
 
-            need_trim = (use_veo and duration_s not in (4, 6, 8)) or (not use_veo and duration_s not in (5, 10))
-            if need_trim:
-                print(f"✂️ Trimming video from API duration to exact {duration_s}s...")
-                trim_video_to_duration(out_mp4, duration_s)
-            
+            # No trimming: keep video at original API duration for all backends (Veo, Wan, etc.)
+
             # Chain: extract last frame for next segment
             extract_last_frame(out_mp4, chain_frame_path)
             current_first_frame_path = chain_frame_path
