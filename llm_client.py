@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import env_loader  # noqa: F401 - load .env from project root first
 from openai import OpenAI
@@ -77,6 +77,140 @@ def _claude_generate(system_prompt: str, user_prompt: str, model: str = None, ma
     return text.strip()
 
 
+# ---------------------------------------------------------
+# Narration-first pipeline: 24s audio script → TTS → transcribe → main script from timeline
+# ---------------------------------------------------------
+MAX_NARRATION_DURATION_S = 24  # Max narration (and video) length in seconds
+NARRATION_WORDS_MAX = (MAX_NARRATION_DURATION_S * 3)  # ~3 words/sec → 72 words for 24s
+NARRATION_WORDS_MIN = (MAX_NARRATION_DURATION_S * 2)  # ~2 words/sec → 48 words
+
+NARRATION_24S_SYSTEM = f"""You are an expert writer of educational narration scripts for short explainer videos.
+Your ONLY task is to write a single, coherent NARRATION SCRIPT that will be spoken aloud (voiceover).
+CRITICAL CONSTRAINT: The narration MUST be {MAX_NARRATION_DURATION_S} SECONDS OR LESS when read aloud at a natural pace (approximately 2.5 to 3 words per second). So use at most {NARRATION_WORDS_MIN} to {NARRATION_WORDS_MAX} words. Do NOT exceed this. There will be no trimming later—the generated audio must be at most {MAX_NARRATION_DURATION_S} seconds from the start. Write concisely.
+Output ONLY the narration text. No preamble, no "Here is the script", no timestamps, no stage directions."""
+
+
+def generate_narration_script_24s(topic: str) -> str:
+    """
+    Generate a narration script that explains the topic. When spoken at natural pace,
+    the script MUST be 24 seconds or less (approx 48–72 words). No trimming; TTS will
+    generate audio that must not exceed 24s.
+    """
+    user = f"""Write a clear, educational narration script for a short explainer video on this topic:
+
+\"\"\"{topic}\"\"\"
+
+The script will be converted to speech. It MUST be {MAX_NARRATION_DURATION_S} seconds or less when read aloud (about 2.5–3 words per second → max {NARRATION_WORDS_MIN}–{NARRATION_WORDS_MAX} words). Do not exceed {MAX_NARRATION_DURATION_S} seconds of spoken content. Output only the narration text."""
+    return _claude_generate(NARRATION_24S_SYSTEM, user, max_tokens=1024)
+
+
+def transcribe_audio_with_timestamps(audio_path: Path) -> List[Dict[str, Any]]:
+    """
+    Transcribe audio file and return segments with exact start_s and end_s for each sentence/segment.
+    Uses OpenAI Whisper. Returns list of { "start_s": float, "end_s": float, "text": str }.
+    """
+    api_key = env_loader.require_env("OPENAI_API_KEY", "Transcription requires OPENAI_API_KEY (Whisper).")
+    client = OpenAI(api_key=api_key)
+    path = Path(audio_path).resolve()
+    if not path.exists():
+        raise FileNotFoundError(f"Audio file not found: {path}")
+    with open(path, "rb") as f:
+        transcription = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=f,
+            response_format="verbose_json",
+        )
+    segments = getattr(transcription, "segments", None) or []
+    out = []
+    for s in segments:
+        start_s = float(s.get("start", 0) if isinstance(s, dict) else getattr(s, "start", 0))
+        end_s = float(s.get("end", 0) if isinstance(s, dict) else getattr(s, "end", 0))
+        text = (s.get("text", "") if isinstance(s, dict) else getattr(s, "text", "") or "").strip()
+        if text:
+            out.append({"start_s": start_s, "end_s": end_s, "text": text})
+    return out
+
+
+MAIN_SCRIPT_FROM_TRANSCRIPTION_SYSTEM = """You are a professional storyboard artist for academic explainer videos.
+You are given: (1) the topic, and (2) a transcription of the narration with exact start and end times in seconds for each sentence.
+Your task is to write the MAIN SCRIPT for the video: a detailed description of what the VIDEO shows, aligned to the narration timeline.
+For each time range (from the transcription), describe in detail: what appears on screen, what moves, camera, visuals, and how they support the narration in that moment. Include assisting visual aids (arrows, labels, highlights) when they help. Do not repeat the narration verbatim; describe the visuals. The main script is the master reference for the whole video. Output only the main script text, no JSON."""
+
+
+def generate_main_script_from_transcription(topic: str, segments: List[Dict[str, Any]]) -> str:
+    """
+    Generate the main script (video description) from the topic and timed transcription.
+    The main script describes the video in detail, aligned to the timeline of each sentence.
+    """
+    seg_lines = "\n".join(
+        f"[{s['start_s']:.1f}s - {s['end_s']:.1f}s] {s['text']}" for s in segments
+    )
+    user = f"""Topic: {topic}
+
+Transcription (exact start and end time for each sentence):
+{seg_lines}
+
+Write the MAIN SCRIPT for the video: for each time range above, describe in detail what the video should show (visuals, movement, camera, elements). Align the video description to this timeline. Include narration and assisting visual aids where relevant. Output only the main script."""
+    return _claude_generate(MAIN_SCRIPT_FROM_TRANSCRIPTION_SYSTEM, user, max_tokens=8192)
+
+
+# Video clips are 8 seconds each (Veo first+last frame mode). Script is divided into 8s segments.
+CLIP_DURATION_S = 8
+
+
+def generate_shots_and_ingredients_from_main_script(
+    main_script_15s: str, segments: List[Dict[str, Any]], topic: str
+) -> Dict[str, Any]:
+    """
+    From the main script and timed transcription, produce the full plan JSON: style_bible,
+    ingredients, shots (each 8 seconds, aligned to 0-8, 8-16, 16-24, ...), first_frame_t2i_prompt.
+    Shots are fixed 8-second segments; narration_text per shot is from segments in that time range.
+    """
+    import math
+    seg_lines = "\n".join(
+        f"[{s['start_s']:.1f}s - {s['end_s']:.1f}s] {s['text']}" for s in segments
+    )
+    total_duration = max(s["end_s"] for s in segments) if segments else MAX_NARRATION_DURATION_S
+    num_shots = max(1, math.ceil(total_duration / CLIP_DURATION_S))
+    # Timeline padded to multiple of 8 so every clip is 8 seconds
+    total_planned = num_shots * CLIP_DURATION_S
+    time_ranges_desc = ", ".join(
+        f"Shot {i}: {(i-1)*CLIP_DURATION_S}-{i*CLIP_DURATION_S}s"
+        for i in range(1, num_shots + 1)
+    )
+    system = (
+        "You are a professional storyboard artist. You output ONLY valid JSON. No markdown. "
+        "Given the main script and the timed transcription, produce: style_bible, ingredients, shots, first_frame_t2i_prompt. "
+        f"The video is divided into exactly {num_shots} segments of {CLIP_DURATION_S} seconds each. "
+        f"Each shot has duration_s = {CLIP_DURATION_S} and time_range: Shot 1 = '0-{CLIP_DURATION_S}s', Shot 2 = '{CLIP_DURATION_S}-{2*CLIP_DURATION_S}s', ..., Shot {num_shots} = '{(num_shots-1)*CLIP_DURATION_S}-{num_shots*CLIP_DURATION_S}s'. "
+        "You MUST output exactly " + str(num_shots) + " shots. Set time_range and duration_s exactly as above; do not use other durations. "
+        "For each shot, set narration_text to the concatenated text from the transcription segments that fall in that shot's time range. "
+        "Set movement_prompt to empty string for every shot. last_frame_t2i_prompt must be full T2I description of the end state. "
+        "detailed_description must describe what happens in that 8-second window of the main script."
+    )
+    user = f"""Topic: {topic}
+
+Main script (video description aligned to timeline):
+{main_script_15s[:12000]}
+
+Timed transcription:
+{seg_lines}
+
+Divide the script into {num_shots} segments of {CLIP_DURATION_S} seconds each: {time_ranges_desc}.
+
+Produce JSON with: style_bible (visual_style, camera_rules, lighting_rules, continuity_rules, style_suffix), ingredients (list of {{ name, description, t2i_prompt: null, matplotlib_code: null }}), shots (list with shot_id 1..{num_shots}, time_range "0-{CLIP_DURATION_S}s" / "{CLIP_DURATION_S}-{2*CLIP_DURATION_S}s" / ... / "{(num_shots-1)*CLIP_DURATION_S}-{num_shots*CLIP_DURATION_S}s", duration_s: {CLIP_DURATION_S} for every shot, detailed_description, last_frame_t2i_prompt, movement_prompt: "", ingredient_names, new_ingredient_names, narration_text from segments in that range, on_screen_text_overlay, assisting_visual_aids, i2i_spatial_prompt: ""), first_frame_t2i_prompt (one long T2I prompt for shot 1 first frame). Output ONLY valid JSON."""
+    raw = _claude_generate(system, user, max_tokens=16384)
+    raw = raw.strip()
+    if raw.startswith("```"):
+        lines = raw.split("\n")
+        if lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        raw = "\n".join(lines)
+    return json.loads(raw)
+
+
 CLAUDE_I2V_SYSTEM = """You are an expert at writing image-to-video (I2V) prompts for generative video models (e.g. Google Veo 3.1).
 
 Your ONLY task: Write a single movement_prompt that will be sent to the I2V model. The prompt must describe how the scene moves from the FIRST frame to the LAST frame of the shot.
@@ -85,8 +219,9 @@ Requirements:
 - The movement_prompt MUST include (1) NARRATION for this shot — what is being explained (the voiceover content), so the video visuals support and sync with the narration; and (2) ASSISTING VISUAL AIDS for this shot — arrows, highlights, text boxes, text labels as specified for this shot (when present). Describe where they appear, what they point to or say, and how they support the explanation. If the shot has no assisting visual aids, do not invent any.
 - The generated video MUST start exactly with the provided first frame (no variation). The generated video MUST end exactly with the provided last frame (no variation). State this explicitly in the prompt.
 - Be extremely detailed: for every element give direction, speed, spatial relationships. If something is static, say "remains fixed at ...". Include camera motion.
-- Indicate the expected duration only as an APPROXIMATE RANGE based on the provided shot duration (for example, "about 5–7 seconds" for a 6-second shot). This range is soft guidance, not a strict limit. Do not use exact timestamps or frame counts.
-- End with: "The video must begin exactly with the provided first frame and end exactly with the provided last frame. Maintain structural integrity and consistency of the source image. No morphing. No hallucinating new objects."
+- STRICT DURATION (technical constraints): Use language that implies a hard stop. Start or include phrases like "A high-quality N-second clip" or "Short-form, exactly N seconds duration." Never use "about" for duration—the word "about" gives the model permission to vary. State clearly: "Exactly N seconds. No longer."
+- COMPLETE ACTION: The action must naturally fit the duration window. Describe a specific, self-contained action that begins and ends within exactly N seconds (e.g. "camera zooms in from wide to medium and stops", "three steps then stop", "label fades in, holds, then fades out"). Avoid open-ended actions (e.g. "person walking", "camera pans across the scene") that suggest indefinite length—they cause the model to produce longer clips.
+- End with: "The video must begin exactly with the provided first frame and end exactly with the provided last frame. The video must be exactly [N] seconds long. Maintain structural integrity and consistency of the source image. No morphing. No hallucinating new objects."
 - Output ONLY the movement_prompt text. No preamble, no "Here is the prompt", no markdown."""
 
 
@@ -120,11 +255,13 @@ def generate_i2v_prompt_claude(
     on_screen_overlay = (shot.get("on_screen_text_overlay") or "").strip() or "none"
     duration_s = int(shot.get("duration_s", 0) or 0)
     if duration_s > 0:
-        approx_min = max(1, duration_s - 1)
-        approx_max = duration_s + 1
-        duration_range_text = f"about {approx_min}–{approx_max} seconds (soft range, not a strict limit)"
+        exact_duration_text = (
+            f"exactly {duration_s} seconds. Use technical phrasing: e.g. 'A high-quality {duration_s}-second clip', "
+            f"'Short-form, exactly {duration_s} seconds duration.' Never use 'about'. "
+            f"The action must be a complete, self-contained movement that fits in {duration_s} seconds (starts and ends within the window)."
+        )
     else:
-        duration_range_text = "duration not specified; do not assume a strict time limit"
+        exact_duration_text = "duration not specified in main script; state a reasonable exact duration in seconds in the prompt"
 
     user_content = f"""Write the I2V movement_prompt for SHOT {shot_id}.
 
@@ -147,10 +284,9 @@ ASSISTING VISUAL AIDS for this shot (include in the movement_prompt when not "no
 
 ON-SCREEN TEXT OVERLAY: {on_screen_overlay}
 
-EXPECTED DURATION RANGE for this shot (to guide how you phrase the movement_prompt; this is soft guidance, not a strict limit):
-{duration_range_text}
+REQUIRED DURATION (from main script): {exact_duration_text}.
 
-Your movement_prompt MUST include the narration content (what is being explained) and the assisting visual aids (arrows, highlights, labels, etc.) so the I2V model generates a video that syncs with the narration and shows those aids. You may mention duration only as an approximate range (for example, "{duration_range_text}") and must avoid strict timing or exact timestamps. Output only the movement_prompt text."""
+Your movement_prompt MUST: (1) Start with or include a clear technical duration line, e.g. "A high-quality {duration_s}-second clip. Exactly {duration_s} seconds duration." (2) Describe a COMPLETE action that naturally fits in {duration_s} seconds—something that begins and ends in that window, not an open-ended motion. (3) Include the narration and assisting visual aids. Output only the movement_prompt text."""
 
     client = anthropic.Anthropic(api_key=api_key)
     msg = client.messages.create(
@@ -203,11 +339,12 @@ def revise_i2v_prompt_for_length(
     on_screen_overlay = (shot.get("on_screen_text_overlay") or "").strip() or "none"
 
     if duration_s > 0:
-        approx_min = max(1, duration_s - 1)
-        approx_max = duration_s + 1
-        duration_range_text = f"about {approx_min}–{approx_max} seconds (soft range, not a strict limit)"
+        exact_duration_text = (
+            f"exactly {duration_s} seconds. Use 'A high-quality {duration_s}-second clip', 'Exactly {duration_s} seconds duration.' "
+            f"Never use 'about'. Action must be complete within {duration_s} seconds."
+        )
     else:
-        duration_range_text = "duration not specified; do not assume a strict time limit"
+        exact_duration_text = "duration not specified; state a reasonable exact duration in seconds"
 
     user_content = f"""You will REVISE an existing image-to-video (I2V) movement_prompt for SHOT {shot_id}.
 
@@ -216,7 +353,7 @@ Your job is to rewrite the prompt so that:
 - It is SHORTER and more concise (aim to stay at or under {max_chars} characters as a soft cap).
 - It keeps the SAME scene, narration, and assisting visual aids intention.
 - It still clearly enforces: video MUST start with the provided first frame and end with the provided last frame.
-- It still mentions the approximate duration range: {duration_range_text}.
+- It MUST state the exact required duration in seconds when given (from main script; no trimming).
 
 MAIN SCRIPT (context; use only the parts relevant to this shot):
 {main_script_15s[:2000]}
@@ -228,13 +365,13 @@ SHOT METADATA (must still be respected):
 - Narration: \"{narration_text}\"
 - Assisting visual aids: {assisting_visual_aids}
 - On-screen text overlay: {on_screen_overlay}
-- Expected duration range: {duration_range_text}
+- Required duration: {exact_duration_text}
 
 Rewrite the movement_prompt so it is more compact and less verbose, but still:
 - Describes the motion from FIRST frame to LAST frame.
 - Includes the narration content and assisting visual aids where relevant.
 - States that the video must begin exactly with the provided first frame and end exactly with the provided last frame.
-- Mentions duration only as an approximate range (e.g., \"{duration_range_text}\") and does NOT use strict timing.
+{f'- States that the video must be exactly {duration_s} seconds long.' if duration_s > 0 else ''}
 
 Output ONLY the revised movement_prompt text. No preamble, no extra commentary."""
 

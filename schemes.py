@@ -192,8 +192,8 @@ class ProjectState(BaseModel):
     project_id: str
     user_prompt: str
 
-    # 20s (legacy) or 15s (new ingredients pipeline)
-    target_duration_s: Literal[15, 20] = 20
+    # Video duration in seconds: 20 (legacy), 15 (legacy ingredients), or actual from narration-first pipeline (e.g. up to 24)
+    target_duration_s: int = 24
 
     style_bible: StyleBible
 

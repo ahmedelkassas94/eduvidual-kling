@@ -13,6 +13,7 @@ from video_actions import (  # noqa: E402
     generate_placeholder_video,
     is_video_valid,
     extract_last_frame,
+    strip_audio_from_video,
 )
 from image_client import generate_image, generate_image_from_images  # noqa: E402
 from reviser import (  # noqa: E402
@@ -63,6 +64,52 @@ def _add_video_context_to_prompt(
         f"This is shot {shot_id} of {total_shots}. Full script (for context only):\n\n{script_preview}\n\nEND CONTEXT.]\n\n"
     )
     return context + main_prompt
+
+
+# ---------------------------------------------------------
+# SCENE CHANGE DETECTION (skip context reviser when script intends a new scene)
+# ---------------------------------------------------------
+def _shot_script_indicates_scene_change(shot: dict, main_script: str) -> bool:
+    """
+    Return True if the shot's script describes an intentional scene change or transition
+    (e.g. "transitions to a comparison layout") rather than continuity from the previous frame.
+    When True, the context reviser should be skipped so it doesn't force the last frame
+    to "continue" the previous scene when the script calls for a new one.
+    """
+    text = (
+        (shot.get("detailed_description") or "")
+        + " "
+        + (shot.get("last_frame_t2i_prompt") or "")
+        + " "
+        + (main_script or "")
+    )
+    text_lower = text.lower()
+    indicators = [
+        "transitions to",
+        "transition to",
+        "the screen transitions",
+        "shifts to",
+        "shift to",
+        "cuts to",
+        "cut to",
+        "new scene",
+        "new layout",
+        "side-by-side",
+        "side by side",
+        "comparison layout",
+        "comparison of",
+        "three-panel",
+        "three panel",
+        "the view shifts",
+        "different view",
+    ]
+    for phrase in indicators:
+        if phrase in text_lower:
+            return True
+    # e.g. "clean, side-by-side comparison layout"
+    if "clean," in text_lower and "layout" in text_lower:
+        return True
+    return False
 
 
 # ---------------------------------------------------------
@@ -721,8 +768,8 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                 previous_shot_last_path = chain_frame_path
             current_first_frame_path = previous_shot_last_path
             current_first_frame_url = frame_to_public_url(current_first_frame_path) if not use_veo else ""
-            # Per-shot narration skipped when POST_STITCH_AUDIO_ONLY=1 (audio from GPT+ElevenLabs after stitch)
-            if not _env_bool("POST_STITCH_AUDIO_ONLY", False):
+            # Per-shot narration disabled: final audio is the main narration script from planning (post-stitch only).
+            if _env_bool("GENERATE_PER_SHOT_NARRATION", False):
                 narration_text = (shot.get("narration_text") or "").strip()
                 if narration_text:
                     audio_path = audio_dir / f"narration_{shot_id:03d}.mp3"
@@ -804,9 +851,14 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
             generate_image_from_images(prompt=i2i_with_context, image_paths=[current_first_frame_path], out_path=shot_last_frame_path)
             print(f"[OK] Last frame: {shot_last_frame_path.name}")
 
-        # Context reviser: check if first+last frames fit the video narrative (changes to last frame only)
+        # Context reviser: check if first+last frames fit the video narrative (changes to last frame only).
+        # Skip when the main script describes an intentional scene change/transition (e.g. "transitions to a
+        # comparison layout") so we don't force the last frame to "continue" the previous scene.
         video_objective = (state.get("user_prompt") or "").strip()
-        if use_first_last_architecture and shot_last_frame_path.exists() and main_script and video_objective:
+        skip_context_reviser = _shot_script_indicates_scene_change(shot, main_script or "")
+        if skip_context_reviser:
+            print(f"\n[Context reviser] Skipping: shot script indicates a scene change or transition (last frame is a new scene, not continuity).")
+        elif use_first_last_architecture and shot_last_frame_path.exists() and main_script and video_objective:
             print(f"\n[Context reviser] Checking if shot {shot_id} frames fit video context...")
             try:
                 fits_context, context_changes = revise_shot_frames_for_context(
@@ -971,8 +1023,12 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                 "it was not generated. Ensure last frame is created before I2V."
             )
         print(f"\n[I2V] Shot {shot_id} -> {out_mp4.name} (duration={duration_s}s)")
-        # I2V: use raw movement_prompt (no context) to avoid very long prompts that can cause Veo "no video in response"
-        i2v_prompt_with_context = (movement_prompt or "").strip()
+        # I2V: prefix with technical duration constraint so the video model sees it first (nudges toward exact duration)
+        raw_prompt = (movement_prompt or "").strip()
+        if duration_s > 0:
+            i2v_prompt_with_context = f"High-quality {duration_s}-second clip. Exactly {duration_s} seconds duration. {raw_prompt}"
+        else:
+            i2v_prompt_with_context = raw_prompt
         try:
             if use_veo:
                 try:
@@ -989,6 +1045,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                     )
                     client, generated_video = wait_for_veo_result(client, operation)
                     save_veo_video(client, generated_video, out_mp4)
+                    strip_audio_from_video(out_mp4)
                     if i2v_prompt_with_context:
                         last_successful_i2v_prompt_len = len(i2v_prompt_with_context)
                 except RuntimeError as veo_err:
@@ -1022,6 +1079,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                             )
                             client, generated_video = wait_for_veo_result(client, operation)
                             save_veo_video(client, generated_video, out_mp4)
+                            strip_audio_from_video(out_mp4)
                             if i2v_prompt_with_context:
                                 last_successful_i2v_prompt_len = len(i2v_prompt_with_context)
                             print("[I2V] Retry with revised movement prompt succeeded.")
@@ -1043,8 +1101,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                 )
                 video_url = wait_for_wan_result(task_id)
                 download_file(video_url, out_mp4)
-
-            # No trimming: keep video at original API duration for all backends (Veo, Wan, etc.)
+                strip_audio_from_video(out_mp4)
 
             if use_first_last_architecture and shot_last_frame_path.exists():
                 previous_shot_last_path = shot_last_frame_path
@@ -1056,7 +1113,8 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
             current_first_frame_url = frame_to_public_url(current_first_frame_path) if not use_veo else ""
             print(f"[OK] Shot {shot_id} OK: {out_mp4.name}")
 
-            if not _env_bool("POST_STITCH_AUDIO_ONLY", False):
+            # Per-shot narration disabled: final audio is the main narration script from planning (post-stitch only).
+            if _env_bool("GENERATE_PER_SHOT_NARRATION", False):
                 narration_text = (shot.get("narration_text") or "").strip()
                 if narration_text:
                     audio_path = audio_dir / f"narration_{shot_id:03d}.mp3"
@@ -1243,7 +1301,7 @@ def run_project(project_dir: Path) -> None:
             current_first_frame_url = frame_to_public_url(current_first_frame_path)
             
             narration_text = (f.get("narration_text") or "").strip()
-            if narration_text:
+            if _env_bool("GENERATE_PER_SHOT_NARRATION", False) and narration_text:
                 audio_path = audio_dir / f"narration_{frame_id:03d}.mp3"
                 print(f"🔊 (DRY_RUN) Generating narration audio for frame {frame_id} (consistent voice/speed)...")
                 try:
@@ -1285,6 +1343,7 @@ def run_project(project_dir: Path) -> None:
                 print(f"⏳ Waiting for Veo I2V generation...")
                 client, generated_video = wait_for_veo_result(client, operation)
                 save_veo_video(client, generated_video, out_mp4)
+                strip_audio_from_video(out_mp4)
             else:
                 model = os.getenv("WAN_I2V_MODEL") or "wan2.6-i2v"
                 i2v_resolution = os.getenv("WAN_I2V_RESOLUTION") or "720P"
@@ -1305,8 +1364,7 @@ def run_project(project_dir: Path) -> None:
                 print(f"⏳ Waiting for I2V generation (task_id: {task_id})...")
                 video_url = wait_for_wan_result(task_id)
                 download_file(video_url, out_mp4)
-
-            # No trimming: keep video at original API duration for all backends (Veo, Wan, etc.)
+                strip_audio_from_video(out_mp4)
 
             # Chain: extract last frame for next segment
             extract_last_frame(out_mp4, chain_frame_path)
@@ -1315,8 +1373,9 @@ def run_project(project_dir: Path) -> None:
             
             print(f"✅ Segment {frame_id} OK: {out_mp4.name}")
             
+            # Per-shot narration disabled: final audio is the main narration script from planning (post-stitch only).
             narration_text = (f.get("narration_text") or "").strip()
-            if narration_text:
+            if _env_bool("GENERATE_PER_SHOT_NARRATION", False) and narration_text:
                 audio_path = audio_dir / f"narration_{frame_id:03d}.mp3"
                 print(f"🔊 Generating narration audio for frame {frame_id} (consistent voice/speed)...")
                 try:

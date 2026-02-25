@@ -103,6 +103,7 @@ def submit_wan_job(
             "duration": duration,
             "prompt_extend": bool(prompt_extend),
             "watermark": bool(watermark),
+            "audio": False,  # Video only; final audio added at stitch time.
         },
     }
 
@@ -167,6 +168,7 @@ def submit_wan_i2v_job(
             "duration": duration,
             "prompt_extend": bool(prompt_extend),
             "watermark": bool(watermark),
+            "audio": False,  # Video only; final audio is the main narration script at stitch time.
         },
     }
 

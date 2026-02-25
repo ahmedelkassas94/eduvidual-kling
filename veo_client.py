@@ -68,7 +68,7 @@ def submit_veo_i2v_job(
     - reference_image_paths: optional list of up to 3 additional images (Veo 3.1 "reference images")
       to guide content; no compositing needed.
     Returns an operation object; poll with wait_for_veo_result().
-    Video will include native audio (dialogue/SFX/ambience from prompt).
+    (Gemini API does not support generate_audio; audio is stripped after download in the orchestrator.)
     """
     client = _client()
     model_name = (model or os.getenv("VEO_MODEL") or DEFAULT_VEO_MODEL).strip()

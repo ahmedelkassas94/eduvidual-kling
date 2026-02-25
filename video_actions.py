@@ -413,6 +413,28 @@ def trim_video_to_duration(
     return out_path
 
 
+def strip_audio_from_video(video_path: Path) -> Path:
+    """
+    Remove audio track from a video file in-place.
+    Clips are kept video-only; final audio is added from the main narration script at stitch time.
+    """
+    path = Path(video_path).resolve()
+    if not path.exists():
+        raise FileNotFoundError(f"Video not found: {video_path}")
+    ffmpeg = _ffmpeg_exe()
+    temp_path = path.parent / f"{path.stem}_no_audio{path.suffix}"
+    cmd = [ffmpeg, "-y", "-i", str(path), "-an", "-c:v", "copy", str(temp_path)]
+    try:
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120)
+    except subprocess.CalledProcessError as e:
+        if temp_path.exists():
+            temp_path.unlink(missing_ok=True)
+        raise RuntimeError(f"Failed to strip audio from {path}: {e}") from e
+    path.unlink(missing_ok=True)
+    shutil.move(str(temp_path), str(path))
+    return path
+
+
 def animate_still_to_video(
     image_path: Path,
     out_file: Path,
