@@ -154,7 +154,8 @@ Write the MAIN SCRIPT for the video: for each time range above, describe in deta
     return _claude_generate(MAIN_SCRIPT_FROM_TRANSCRIPTION_SYSTEM, user, max_tokens=8192)
 
 
-# Video clips are 8 seconds each (Veo first+last frame mode). Script is divided into 8s segments.
+# Legacy: older pipelines used fixed 8-second segments.
+# New Kling 3.0 pipeline uses variable shot durations (3–15s) and first-frame-only chaining.
 CLIP_DURATION_S = 8
 
 
@@ -162,31 +163,33 @@ def generate_shots_and_ingredients_from_main_script(
     main_script_15s: str, segments: List[Dict[str, Any]], topic: str
 ) -> Dict[str, Any]:
     """
-    From the main script and timed transcription, produce the full plan JSON: style_bible,
-    ingredients, shots (each 8 seconds, aligned to 0-8, 8-16, 16-24, ...), first_frame_t2i_prompt.
-    Shots are fixed 8-second segments; narration_text per shot is from segments in that time range.
+    From the main script and timed transcription, produce the full plan JSON:
+    style_bible, ingredients, shots with variable duration (3–15s), first_frame_t2i_prompt.
+
+    Shot durations must be chosen based on the narration timeline; narration_text per shot
+    is from transcription segments that fall in that shot's time_range.
     """
     import math
     seg_lines = "\n".join(
         f"[{s['start_s']:.1f}s - {s['end_s']:.1f}s] {s['text']}" for s in segments
     )
     total_duration = max(s["end_s"] for s in segments) if segments else MAX_NARRATION_DURATION_S
-    num_shots = max(1, math.ceil(total_duration / CLIP_DURATION_S))
-    # Timeline padded to multiple of 8 so every clip is 8 seconds
-    total_planned = num_shots * CLIP_DURATION_S
-    time_ranges_desc = ", ".join(
-        f"Shot {i}: {(i-1)*CLIP_DURATION_S}-{i*CLIP_DURATION_S}s"
-        for i in range(1, num_shots + 1)
-    )
+    # We require integer shot durations that sum exactly to this rounded total.
+    total_duration_int = int(math.ceil(total_duration))
+
     system = (
         "You are a professional storyboard artist. You output ONLY valid JSON. No markdown. "
         "Given the main script and the timed transcription, produce: style_bible, ingredients, shots, first_frame_t2i_prompt. "
-        f"The video is divided into exactly {num_shots} segments of {CLIP_DURATION_S} seconds each. "
-        f"Each shot has duration_s = {CLIP_DURATION_S} and time_range: Shot 1 = '0-{CLIP_DURATION_S}s', Shot 2 = '{CLIP_DURATION_S}-{2*CLIP_DURATION_S}s', ..., Shot {num_shots} = '{(num_shots-1)*CLIP_DURATION_S}-{num_shots*CLIP_DURATION_S}s'. "
-        "You MUST output exactly " + str(num_shots) + " shots. Set time_range and duration_s exactly as above; do not use other durations. "
+        "This video is divided into a SHOT LIST. "
+        f"The sum of ALL shot duration_s MUST be EXACTLY {total_duration_int} seconds. "
+        "Each shot duration_s MUST be an integer between 3 and 15 seconds (inclusive). "
+        "You MUST set time_range cumulatively starting at 0s, e.g. Shot 1 = '0-7s', Shot 2 = '7-14s', etc. "
+        "Set time_range and duration_s so the sum matches EXACTLY the total above. "
         "For each shot, set narration_text to the concatenated text from the transcription segments that fall in that shot's time range. "
-        "Set movement_prompt to empty string for every shot. last_frame_t2i_prompt must be full T2I description of the end state. "
-        "detailed_description must describe what happens in that 8-second window of the main script."
+        "Set movement_prompt to empty string for every shot (movement_prompt is written later for the video model). "
+        "Because the new Kling 3.0 pipeline is FIRST-FRAME-ONLY (we generate only the start frame, then animate with movement), "
+        "last_frame_t2i_prompt must be the empty string \"\" for every shot. "
+        "detailed_description must describe what happens in that shot window of the main script."
     )
     user = f"""Topic: {topic}
 
@@ -196,9 +199,9 @@ Main script (video description aligned to timeline):
 Timed transcription:
 {seg_lines}
 
-Divide the script into {num_shots} segments of {CLIP_DURATION_S} seconds each: {time_ranges_desc}.
+Divide the script into a sequence of shots (each 3–15 seconds) so that the sum of all duration_s equals EXACTLY {total_duration_int} seconds.
 
-Produce JSON with: style_bible (visual_style, camera_rules, lighting_rules, continuity_rules, style_suffix), ingredients (list of {{ name, description, t2i_prompt: null, matplotlib_code: null }}), shots (list with shot_id 1..{num_shots}, time_range "0-{CLIP_DURATION_S}s" / "{CLIP_DURATION_S}-{2*CLIP_DURATION_S}s" / ... / "{(num_shots-1)*CLIP_DURATION_S}-{num_shots*CLIP_DURATION_S}s", duration_s: {CLIP_DURATION_S} for every shot, detailed_description, last_frame_t2i_prompt, movement_prompt: "", ingredient_names, new_ingredient_names, narration_text from segments in that range, on_screen_text_overlay, assisting_visual_aids, i2i_spatial_prompt: ""), first_frame_t2i_prompt (one long T2I prompt for shot 1 first frame). Output ONLY valid JSON."""
+Produce JSON with: style_bible (visual_style, camera_rules, lighting_rules, continuity_rules, style_suffix), ingredients (list of {{ name, description, t2i_prompt: null, matplotlib_code: null }}), shots (list with shot_id 1..N, for each shot: time_range \"start-end s\" and duration_s integer 3..15, detailed_description, last_frame_t2i_prompt (must be \"\"), movement_prompt: \"\", ingredient_names, new_ingredient_names, reference_element_names (list of EXACTLY two ingredient names you will use as Kling elements reference images for this shot), narration_text from segments in that range, on_screen_text_overlay, assisting_visual_aids, i2i_spatial_prompt: \"\"), first_frame_t2i_prompt (one long T2I prompt for shot 1 first frame). Output ONLY valid JSON."""
     raw = _claude_generate(system, user, max_tokens=16384)
     raw = raw.strip()
     if raw.startswith("```"):
@@ -211,17 +214,21 @@ Produce JSON with: style_bible (visual_style, camera_rules, lighting_rules, cont
     return json.loads(raw)
 
 
-CLAUDE_I2V_SYSTEM = """You are an expert at writing image-to-video (I2V) prompts for generative video models (e.g. Google Veo 3.1).
+CLAUDE_I2V_SYSTEM = """You are an expert at writing image-to-video (I2V) prompts for generative video models (e.g. Kling 3.0).
 
-Your ONLY task: Write a single movement_prompt that will be sent to the I2V model. The prompt must describe how the scene moves from the FIRST frame to the LAST frame of the shot.
+Your ONLY task: Write a single movement_prompt that will be sent to the I2V model. The prompt must describe how the scene animates during this shot (starting from the FIRST frame you provide).
 
 Requirements:
 - The movement_prompt MUST include (1) NARRATION for this shot — what is being explained (the voiceover content), so the video visuals support and sync with the narration; and (2) ASSISTING VISUAL AIDS for this shot — arrows, highlights, text boxes, text labels as specified for this shot (when present). Describe where they appear, what they point to or say, and how they support the explanation. If the shot has no assisting visual aids, do not invent any.
-- The generated video MUST start exactly with the provided first frame (no variation). The generated video MUST end exactly with the provided last frame (no variation). State this explicitly in the prompt.
+- The generated video MUST start exactly with the provided first frame (no variation).
+- IMPORTANT: In the new Kling 3.0 first-frame-only pipeline we do NOT provide/lock an explicit last-frame image. Therefore, do not promise that the final frame matches a provided last-frame image exactly.
+  Instead, ensure the motion naturally settles into a coherent end state that we will extract as the start frame for the next shot.
+- The movement_prompt SHOULD refer to Kling element references using @Element1 and @Element2 (if provided). State that @Element1 and @Element2 must remain consistent (same object identity, style, and approximate position) throughout the clip.
 - Be extremely detailed: for every element give direction, speed, spatial relationships. If something is static, say "remains fixed at ...". Include camera motion.
+- HARD LENGTH CAP (Kling limit): The final movement_prompt output MUST be <= 2400 characters total (including spaces). This is required so the orchestrator prefix + movement_prompt stays <= 2500 for the Kling API.
 - STRICT DURATION (technical constraints): Use language that implies a hard stop. Start or include phrases like "A high-quality N-second clip" or "Short-form, exactly N seconds duration." Never use "about" for duration—the word "about" gives the model permission to vary. State clearly: "Exactly N seconds. No longer."
 - COMPLETE ACTION: The action must naturally fit the duration window. Describe a specific, self-contained action that begins and ends within exactly N seconds (e.g. "camera zooms in from wide to medium and stops", "three steps then stop", "label fades in, holds, then fades out"). Avoid open-ended actions (e.g. "person walking", "camera pans across the scene") that suggest indefinite length—they cause the model to produce longer clips.
-- End with: "The video must begin exactly with the provided first frame and end exactly with the provided last frame. The video must be exactly [N] seconds long. Maintain structural integrity and consistency of the source image. No morphing. No hallucinating new objects."
+- End with: "The video must begin exactly with the provided first frame. The video must be exactly the required duration in seconds long. Maintain structural integrity and continuity with the source image. No morphing. No hallucinating new objects."
 - Output ONLY the movement_prompt text. No preamble, no "Here is the prompt", no markdown."""
 
 
@@ -232,7 +239,9 @@ def generate_i2v_prompt_claude(
 ) -> str:
     """
     Call Claude to write the I2V movement_prompt for one shot. Only I2V prompts are written by Claude.
-    first_frame_context: for shot 1 use project first_frame_t2i_prompt; for shot N use previous shot's last_frame_t2i_prompt.
+    first_frame_context: for shot 1 use project first_frame_t2i_prompt;
+      for shot N>1 use a short textual context describing the scene at the start of this shot.
+      (The actual first frame image is provided to the video model at runtime.)
     """
     api_key = env_loader.get_env("ANTHROPIC_API_KEY")
     if not api_key:
@@ -248,12 +257,14 @@ def generate_i2v_prompt_claude(
     model = (env_loader.get_env("CLAUDE_MODEL") or "claude-sonnet-4-6").strip()
     shot_id = shot.get("shot_id", 0)
     detailed = (shot.get("detailed_description") or "").strip()
-    last_frame_t2i = (shot.get("last_frame_t2i_prompt") or "").strip()
     ingredient_names = shot.get("ingredient_names") or []
     narration_text = (shot.get("narration_text") or "").strip()
     assisting_visual_aids = (shot.get("assisting_visual_aids") or "").strip() or "none"
     on_screen_overlay = (shot.get("on_screen_text_overlay") or "").strip() or "none"
     duration_s = int(shot.get("duration_s", 0) or 0)
+    reference_element_names = (shot.get("reference_element_names") or []) or []
+    ref1 = reference_element_names[0] if len(reference_element_names) > 0 else "none"
+    ref2 = reference_element_names[1] if len(reference_element_names) > 1 else "none"
     if duration_s > 0:
         exact_duration_text = (
             f"exactly {duration_s} seconds. Use technical phrasing: e.g. 'A high-quality {duration_s}-second clip', "
@@ -273,7 +284,6 @@ FIRST FRAME context (scene at start of this shot — T2I description or previous
 
 THIS SHOT:
 - detailed_description: {detailed}
-- last_frame_t2i_prompt (end state of shot): {last_frame_t2i[:1500]}
 - ingredient_names: {ingredient_names}
 
 NARRATION for this shot (must be reflected in the I2V prompt so the video supports what is being said):
@@ -283,6 +293,10 @@ ASSISTING VISUAL AIDS for this shot (include in the movement_prompt when not "no
 {assisting_visual_aids}
 
 ON-SCREEN TEXT OVERLAY: {on_screen_overlay}
+
+REFERENCE ELEMENTS (Kling 'elements' in the request; refer to them as @Element1 and @Element2):
+- @Element1: {ref1}
+- @Element2: {ref2}
 
 REQUIRED DURATION (from main script): {exact_duration_text}.
 
@@ -314,7 +328,7 @@ def revise_i2v_prompt_for_length(
 ) -> str:
     """
     Shorten / refine an existing I2V movement_prompt to fit within a soft character limit,
-    while keeping the same scene, narration, assisting visual aids, and first/last-frame constraints.
+    while keeping the same scene, narration, assisting visual aids, and the FIRST-FRAME-only constraints.
 
     This is only used as a fallback when Veo returns:
       "Veo operation finished but no video in response. This can happen due to content policy,
@@ -348,11 +362,12 @@ def revise_i2v_prompt_for_length(
 
     user_content = f"""You will REVISE an existing image-to-video (I2V) movement_prompt for SHOT {shot_id}.
 
-The previous prompt caused the Veo API to finish without returning a video (likely due to content policy or prompt limits).
+    The previous prompt caused the video API to finish without returning a video (likely due to content policy or prompt limits).
 Your job is to rewrite the prompt so that:
 - It is SHORTER and more concise (aim to stay at or under {max_chars} characters as a soft cap).
 - It keeps the SAME scene, narration, and assisting visual aids intention.
-- It still clearly enforces: video MUST start with the provided first frame and end with the provided last frame.
+- It still clearly enforces: video MUST start with the provided first frame.
+  IMPORTANT: do NOT require an explicit locked match to a provided last frame (we extract the last frame after generation).
 - It MUST state the exact required duration in seconds when given (from main script; no trimming).
 
 MAIN SCRIPT (context; use only the parts relevant to this shot):
@@ -368,9 +383,10 @@ SHOT METADATA (must still be respected):
 - Required duration: {exact_duration_text}
 
 Rewrite the movement_prompt so it is more compact and less verbose, but still:
-- Describes the motion from FIRST frame to LAST frame.
+- Describes the motion starting from the FIRST frame (no explicit locked last frame requirement).
 - Includes the narration content and assisting visual aids where relevant.
-- States that the video must begin exactly with the provided first frame and end exactly with the provided last frame.
+- States that the video must begin exactly with the provided first frame.
+  Ensures the motion settles coherently within the exact duration.
 {f'- States that the video must be exactly {duration_s} seconds long.' if duration_s > 0 else ''}
 
 Output ONLY the revised movement_prompt text. No preamble, no extra commentary."""

@@ -29,7 +29,8 @@ class ScriptShot(BaseModel):
     """
     shot_id: conint(ge=1)
     time_range: str = Field(..., description='e.g. "0-2s", "2-5s"')
-    duration_s: conint(ge=1, le=10)
+    # New requirement: each shot should be 3–15 seconds.
+    duration_s: conint(ge=3, le=15)
     detailed_description: str = Field(
         ...,
         description="Very detailed description of what should happen in this shot (action, camera, elements, continuity).",
@@ -38,9 +39,15 @@ class ScriptShot(BaseModel):
         ...,
         description="Prompt for I2V: how the scene moves from first frame to last frame (camera, objects, continuity).",
     )
+    # Legacy field (still present for backward compatibility), but new Kling-3.0 pipeline
+    # generates only via FIRST FRAME + movement, then extracts the last frame.
     last_frame_t2i_prompt: str = Field(
         "",
-        description="T2I prompt for the END state of this shot. Used to generate the last frame (or as intent for I2I reviser). Same detail level as first_frame_t2i_prompt: environment, every object, spatial relationships.",
+        description="Legacy: optional T2I prompt for the END state of this shot. Unused in the new first-frame-only Kling pipeline.",
+    )
+    reference_element_names: List[str] = Field(
+        default_factory=list,
+        description="Exactly two ingredient/element names to use as Kling 'elements' reference images for this shot.",
     )
     ingredient_names: conlist(str, min_length=0) = Field(
         default_factory=list,

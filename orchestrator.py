@@ -13,6 +13,7 @@ from video_actions import (  # noqa: E402
     generate_placeholder_video,
     is_video_valid,
     extract_last_frame,
+    ensure_video_720p,
     strip_audio_from_video,
 )
 from image_client import generate_image, generate_image_from_images  # noqa: E402
@@ -32,6 +33,7 @@ from veo_client import (  # noqa: E402
     wait_for_veo_result,
     save_veo_video,
 )
+from kling_client import generate_kling_i2v_video  # noqa: E402
 from tts_client import (  # noqa: E402
     generate_speech,
     adjust_audio_duration,
@@ -616,12 +618,13 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
     print("-" * 78)
     print(f"Project: {project_dir}")
     print(f"VIDEO_BACKEND: {video_backend}")
-    use_first_last_architecture = use_single_t2i and all(
-        (s.get("last_frame_t2i_prompt") or "").strip() for s in shots
-    )
+    # New requirement: use first-frame-only architecture for all shots.
+    # We generate each clip from the FIRST frame + a movement description,
+    # then extract the last frame to chain into the next shot.
+    use_first_last_architecture = False
     print(f"Shots: {len(shots)} | Ingredients: {len(ingredients)} | Mode: {'SINGLE T2I (first frame)' if use_single_t2i else 'Per-ingredient T2I'}")
     if use_single_t2i:
-        print(f"Architecture: {'First+Last frame per shot, I2V between them (chain = last frame)' if use_first_last_architecture else 'First frame only, I2V then extract last'}")
+        print("Architecture: First frame only (Kling-style chaining via extracted last frame)")
     print("Approval: interactive (main script, T2I, and I2V prompts require APPROVE)")
     print("-" * 78)
 
@@ -737,9 +740,98 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
     chain_frame_path = frames_dir / "chain_frame.png"
     current_first_frame_path: Optional[Path] = None
     current_first_frame_url: str = ""
-    previous_shot_last_path: Optional[Path] = None  # In first+last arch: last frame of previous shot = first of next
+    previous_shot_last_path: Optional[Path] = None
     use_veo = video_backend == "veo"
+    use_kling = video_backend == "kling"
     topic_hint = (state.get("user_prompt") or "").strip()[:500]  # For scientific revision context
+    reference_elements_dir = project_dir / "reference_elements"
+    reference_elements_dir.mkdir(parents=True, exist_ok=True)
+
+    ingredient_desc_map: Dict[str, str] = {}
+    for ing in ingredients:
+        n = (ing.get("name") or "").strip()
+        if n:
+            ingredient_desc_map[n] = (ing.get("description") or "").strip()
+
+    def _get_reference_element_names(shot_obj: dict) -> List[str]:
+        names = (shot_obj.get("reference_element_names") or []) or []
+        if len(names) >= 2:
+            return [str(names[0]).strip(), str(names[1]).strip()]
+        fallback = [str(x).strip() for x in (shot_obj.get("ingredient_names") or []) or []][:2]
+        if len(fallback) == 2:
+            return fallback
+        raise RuntimeError(f"Shot {shot_obj.get('shot_id')} must have exactly two reference elements.")
+
+    def _build_reference_element_t2i_prompt(element_name: str, element_desc: str, *, shot_id: int) -> str:
+        style_prefix = ""
+        if style_bible and (style_bible.get("visual_style") or "").strip():
+            style_prefix = f"STYLE: {style_bible.get('visual_style').strip()}\n\n"
+        style_suffix = (style_bible.get("style_suffix") or "").strip() if style_bible else ""
+        base = (
+            f"{style_prefix}"
+            f"Standalone reference image (no text) for a Kling 3.0 element.\n"
+            f"Element name: {element_name}\n"
+            f"Target appearance/intent: {element_desc}\n\n"
+            f"Framing: centered, frontal view when relevant, occupying ~50–70% of the frame.\n"
+            f"Background: clean neutral gradient, no clutter.\n"
+            f"Constraints: no logos, no watermarks, no people, no faces, no hands.\n"
+            f"Use the same visual style as the final video."
+        )
+        if style_suffix:
+            base += f" {style_suffix}"
+        return _add_video_context_to_prompt(base, shot_id, len(shots), main_script, "image")
+
+    def _ensure_reference_element_image(element_name: str, element_desc: str, *, shot_id: int) -> Path:
+        # Prefer reusing already-generated ingredient images (if per-ingredient T2I mode ran).
+        existing_from_ingredients = ingredient_paths.get(element_name)
+        if existing_from_ingredients and existing_from_ingredients.exists():
+            return existing_from_ingredients
+
+        safe_name = _sanitize_ingredient_filename(element_name)
+        out_path = reference_elements_dir / f"{safe_name}.png"
+        if out_path.exists():
+            return out_path
+
+        t2i_prompt = _build_reference_element_t2i_prompt(element_name, element_desc, shot_id=shot_id)
+        print(f"\n[REF ELEMENT] Generating reference element '{element_name}' -> {out_path.name}")
+        _require_approval(
+            prompt_text=f"Type APPROVE to generate reference element image '{element_name}'.",
+            skip_message="Reference element not approved. Exiting.",
+            allow_auto=True,
+        )
+        generate_image(t2i_prompt, out_path)
+
+        # Run revisers to enforce element consistency/accuracy.
+        try:
+            print(f"[REF ELEMENT] I2I reviser: {element_name}")
+            i2i_prompt = describe_changes_for_i2i(out_path, element_desc)
+            i2i_prompt = _add_video_context_to_prompt(i2i_prompt, shot_id, len(shots), main_script, "image")
+            _require_approval(
+                prompt_text=f"Type APPROVE to revise reference element '{element_name}' (I2I).",
+                skip_message="Reference element revision not approved. Exiting.",
+                allow_auto=True,
+            )
+            generate_image_from_images(prompt=i2i_prompt, image_paths=[out_path], out_path=out_path)
+        except Exception as e:
+            print(f"[WARN] Reference element I2I reviser skipped for '{element_name}': {e}")
+
+        try:
+            print(f"[REF ELEMENT] Scientific revision check: {element_name}")
+            shot_context = f"Reference element '{element_name}' should match: {element_desc}"
+            is_accurate, suggested_changes = revise_frames_for_scientific_accuracy(
+                out_path,
+                out_path,
+                shot_context,
+                topic_hint=topic_hint,
+            )
+            if not is_accurate and suggested_changes:
+                sci_prompt = _add_video_context_to_prompt(suggested_changes, shot_id, len(shots), main_script, "image")
+                generate_image_from_images(prompt=sci_prompt, image_paths=[out_path], out_path=out_path)
+        except Exception as e:
+            print(f"[WARN] Reference element scientific revision skipped for '{element_name}': {e}")
+
+        return out_path
+
     # Track last successful I2V prompt length (for fallback revisions when Veo returns no video)
     last_successful_i2v_prompt_len: int = 0
 
@@ -749,8 +841,12 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
         movement_prompt = (shot.get("movement_prompt") or "").strip()
         # Generate I2V movement_prompt at run time if not in plan (planner leaves it empty)
         if not movement_prompt and main_script:
-            first_context = (state.get("first_frame_t2i_prompt") or "").strip() if idx == 0 else (shots[idx - 1].get("last_frame_t2i_prompt") or "").strip()
+            first_context = (state.get("first_frame_t2i_prompt") or "").strip() if idx == 0 else (shots[idx - 1].get("detailed_description") or "").strip()
             print(f"[I2V] Generating movement prompt for shot {shot_id} (Claude)...")
+            if len(shot.get("reference_element_names") or []) < 2:
+                fallback = [str(x).strip() for x in (shot.get("ingredient_names") or []) or []][:2]
+                if len(fallback) == 2:
+                    shot["reference_element_names"] = fallback
             movement_prompt = generate_i2v_prompt_claude(shot, main_script, first_context)
         last_frame_t2i_prompt = (shot.get("last_frame_t2i_prompt") or "").strip()
         ingredient_names = shot.get("ingredient_names") or []
@@ -761,6 +857,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
 
         if out_mp4.exists() and is_video_valid(out_mp4):
             print(f"[REUSE] Reusing segment: {out_mp4.name}")
+            ensure_video_720p(out_mp4)
             if use_first_last_architecture and shot_last_frame_path.exists():
                 previous_shot_last_path = shot_last_frame_path
             else:
@@ -809,19 +906,9 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                     composite_images(ingredient_image_paths, first_frame_path)
                 current_first_frame_path = first_frame_path
         else:
-            # Shot 2+: use last frame of previous shot; in legacy mode optionally composite new ingredient images
-            if new_ingredient_names and not use_single_t2i:
-                new_paths = [ingredient_paths[n] for n in new_ingredient_names if n in ingredient_paths and ingredient_paths[n].exists()]
-                paths = [current_first_frame_path] if (current_first_frame_path and current_first_frame_path.exists()) else []
-                paths.extend(new_paths)
-                if len(paths) > 1:
-                    first_frame_path = frames_dir / f"shot_{shot_id:03d}_first.png"
-                    composite_images(paths, first_frame_path)
-                    current_first_frame_path = first_frame_path
-                else:
-                    current_first_frame_path = chain_frame_path
-            else:
-                current_first_frame_path = chain_frame_path
+            # First-frame-only chaining: shot starts exactly from the extracted last frame.
+            # Do NOT composite new ingredients here (the movement prompt must introduce them).
+            current_first_frame_path = chain_frame_path
         if not current_first_frame_path or not current_first_frame_path.exists():
             raise RuntimeError(f"Shot {shot_id}: no first frame available")
 
@@ -998,6 +1085,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
             from video_actions import animate_still_to_video
             print(f"[I2V] (DRY_RUN) Shot {shot_id} -> {out_mp4.name}")
             animate_still_to_video(current_first_frame_path, out_mp4, duration_s, "hold")
+            ensure_video_720p(out_mp4)
             if use_first_last_architecture and shot_last_frame_path.exists():
                 previous_shot_last_path = shot_last_frame_path
                 current_first_frame_path = shot_last_frame_path
@@ -1030,7 +1118,30 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
         else:
             i2v_prompt_with_context = raw_prompt
         try:
-            if use_veo:
+            if use_kling:
+                ref_names = _get_reference_element_names(shot)
+                el1_name, el2_name = ref_names[0], ref_names[1]
+                el1_desc = ingredient_desc_map.get(el1_name, "")
+                el2_desc = ingredient_desc_map.get(el2_name, "")
+                if not el1_desc or not el2_desc:
+                    raise RuntimeError(f"Missing element descriptions for Kling elements: {ref_names}")
+
+                el1_path = _ensure_reference_element_image(el1_name, el1_desc, shot_id=shot_id)
+                el2_path = _ensure_reference_element_image(el2_name, el2_desc, shot_id=shot_id)
+                element_urls = [frame_to_public_url(el1_path), frame_to_public_url(el2_path)]
+
+                negative_prompt = "blur, distort, and low quality, logos, watermarks, people, human, face, hands"
+                generate_kling_i2v_video(
+                    prompt=i2v_prompt_with_context,
+                    start_image_url=current_first_frame_url,
+                    duration_s=duration_s,
+                    output_path=out_mp4,
+                    element_frontal_image_urls=element_urls,
+                    negative_prompt=negative_prompt,
+                    generate_audio=False,
+                )
+                ensure_video_720p(out_mp4)
+            elif use_veo:
                 try:
                     # First attempt: use the movement_prompt as-is
                     client, operation = submit_veo_i2v_job(
@@ -1046,6 +1157,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                     client, generated_video = wait_for_veo_result(client, operation)
                     save_veo_video(client, generated_video, out_mp4)
                     strip_audio_from_video(out_mp4)
+                    ensure_video_720p(out_mp4)
                     if i2v_prompt_with_context:
                         last_successful_i2v_prompt_len = len(i2v_prompt_with_context)
                 except RuntimeError as veo_err:
@@ -1080,6 +1192,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                             client, generated_video = wait_for_veo_result(client, operation)
                             save_veo_video(client, generated_video, out_mp4)
                             strip_audio_from_video(out_mp4)
+                            ensure_video_720p(out_mp4)
                             if i2v_prompt_with_context:
                                 last_successful_i2v_prompt_len = len(i2v_prompt_with_context)
                             print("[I2V] Retry with revised movement prompt succeeded.")
@@ -1102,6 +1215,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                 video_url = wait_for_wan_result(task_id)
                 download_file(video_url, out_mp4)
                 strip_audio_from_video(out_mp4)
+                ensure_video_720p(out_mp4)
 
             if use_first_last_architecture and shot_last_frame_path.exists():
                 previous_shot_last_path = shot_last_frame_path

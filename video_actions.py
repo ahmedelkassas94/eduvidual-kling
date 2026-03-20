@@ -273,6 +273,43 @@ def extract_last_frame(video_path: Path, out_png: Path) -> Path:
     )
 
 
+def ensure_video_720p(video_path: Path, *, width: int = 1280, height: int = 720) -> Path:
+    """
+    Re-encode a video to exactly 720p (1280x720) and remove audio.
+    This is used to enforce the "videos generated should be 720p" requirement.
+    """
+    path = Path(video_path).resolve()
+    if not path.exists():
+        raise FileNotFoundError(f"Video not found: {video_path}")
+
+    ffmpeg = _ffmpeg_exe()
+    temp_path = path.parent / f"{path.stem}_720p{path.suffix}"
+
+    # Preserve aspect ratio, then pad to a fixed 16:9 frame.
+    vf = (
+        f"scale={width}:{height}:force_original_aspect_ratio=decrease,"
+        f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2"
+    )
+    cmd = [
+        ffmpeg,
+        "-y",
+        "-i",
+        path.as_posix(),
+        "-vf",
+        vf,
+        "-an",
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        temp_path.as_posix(),
+    ]
+    subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    path.unlink(missing_ok=True)
+    shutil.move(str(temp_path), str(path))
+    return path
+
+
 # ---------------------------------------------------------
 # INTERNAL
 # ---------------------------------------------------------

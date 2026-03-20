@@ -12,6 +12,7 @@ google-genai>=1.0.0
 openai>=1.0.0
 anthropic>=0.39.0
 rich>=13.0.0
+fal-client
 
 # LangGraph + LlamaIndex (workflow and retriever)
 langgraph>=0.2.0

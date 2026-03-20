@@ -18,7 +18,6 @@ from llm_client import (
     generate_main_script_from_transcription,
     generate_shots_and_ingredients_from_main_script,
     transcribe_audio_with_timestamps,
-    CLIP_DURATION_S,
 )
 from schemes import ProjectState, StyleBible, ImageFrame, Ingredient, ScriptShot
 from tts_client import generate_speech, DEFAULT_VOICE, DEFAULT_MODEL, DEFAULT_SPEED
@@ -118,6 +117,7 @@ def ai_plan_ingredients(prompt: str, target_duration_s: int = 24) -> ProjectStat
     shot_defaults = {
         "movement_prompt": "",
         "last_frame_t2i_prompt": "",
+        "reference_element_names": [],
         "ingredient_names": [],
         "new_ingredient_names": [],
         "narration_text": "",
@@ -136,17 +136,16 @@ def ai_plan_ingredients(prompt: str, target_duration_s: int = 24) -> ProjectStat
 
     def _normalize_shot(s: dict, idx: int) -> dict:
         out = {**shot_defaults, **s, "movement_prompt": s.get("movement_prompt", "")}
-        # Force 8-second grid: each shot is CLIP_DURATION_S, time_range (shot_id-1)*8 to shot_id*8
+        # Keep planner-provided time_range + duration_s (new requirement: 3–15 seconds).
         shot_id = int(s.get("shot_id", idx + 1))
-        out["time_range"] = f"{(shot_id - 1) * CLIP_DURATION_S}-{shot_id * CLIP_DURATION_S}s"
-        out["duration_s"] = CLIP_DURATION_S
+        out["shot_id"] = shot_id
         out["on_screen_text_overlay"] = _to_str(out.get("on_screen_text_overlay"), "none")
         out["assisting_visual_aids"] = _to_str(out.get("assisting_visual_aids"), "")
         return out
 
     shots = [ScriptShot(**_normalize_shot(s, idx)) for idx, s in enumerate(shots_data)]
-    # Total video duration is number of 8-second clips
-    total_video_s = len(shots) * CLIP_DURATION_S
+    # Total video duration is the sum of planned shot durations.
+    total_video_s = int(sum(s.duration_s for s in shots))
 
     state = ProjectState(
         project_id=project_id,
