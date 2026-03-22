@@ -22,6 +22,8 @@ from reviser import (  # noqa: E402
     revise_i2v_prompt_for_exact_frames,
     revise_first_frame_for_context,
     revise_shot_frames_for_context,
+    revise_image_with_gemini_lens,
+    revise_image_generation_prompt_gemini,
     verify_i2v_prompt_matches_frames,
     fix_i2v_prompt_and_last_frame,
 )
@@ -629,6 +631,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
     print("-" * 78)
 
     main_script = (state.get("main_script_15s") or "").strip()
+    video_objective = (state.get("user_prompt") or "").strip()
     if main_script:
         print("\n" + "-" * 78)
         print("MAIN SCRIPT (15s reference) — REVIEW & APPROVE")
@@ -639,6 +642,123 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
             skip_message="Main script not approved. Exiting before generation.",
             allow_auto=True,
         )
+
+    # Image QA (Gemini lens) must be defined BEFORE STEP 1 uses it.
+    lens_enabled = _env_bool("IMAGE_LENS_ENABLED", True)
+    lens_max_attempts = int((os.getenv("IMAGE_LENS_MAX_ATTEMPTS") or "3").strip())
+    pre_reviser_enabled = _env_bool("IMAGE_PROMPT_PRE_REVISER_ENABLED", True)
+    topic_hint = (state.get("user_prompt") or "").strip()[:500]  # For scientific revision / lens context
+
+    def _run_gemini_image_lens_until_usable(
+        *,
+        image_path: Path,
+        generation_type: str,
+        current_prompt: str,
+        image_purpose: str,
+        source_image_paths: Optional[List[Path]] = None,
+    ) -> str:
+        """
+        After each image generation, use Gemini VLM lens to verify:
+        1) logical realism
+        2) full-script context fit + ingredient objective
+        3) scientific accuracy
+        If anything is wrong, Gemini returns a revised prompt and we regenerate.
+        """
+        if not lens_enabled:
+            return current_prompt
+        if not main_script or not video_objective:
+            print("[Gemini lens] Skipping: main_script or video_objective missing.")
+            return current_prompt
+
+        prompt = current_prompt
+        gen_type = (generation_type or "").strip().upper()
+        if gen_type not in {"T2I", "I2I"}:
+            gen_type = "T2I"
+
+        for attempt in range(1, lens_max_attempts + 1):
+            print(f"\n[Gemini lens] Attempt {attempt}/{lens_max_attempts} — checking {image_path.name} ({gen_type})")
+            is_usable, prompt_revision, issues = revise_image_with_gemini_lens(
+                image_path,
+                original_prompt=prompt,
+                full_script=main_script,
+                video_objective=video_objective,
+                image_purpose=image_purpose,
+                generation_type=gen_type,
+                topic_hint=topic_hint,
+            )
+
+            if is_usable:
+                print("[Gemini lens] Image is usable.")
+                return prompt
+
+            if not prompt_revision:
+                raise RuntimeError("[Gemini lens] Image not usable, but prompt_revision is empty.")
+
+            if issues:
+                print(f"[Gemini lens] Issues: {issues[:200]}...")
+
+            print("\n" + "=" * 78)
+            print(f"GEMINI LENS — REGENERATION PROMPT ({image_path.name}, {gen_type}, attempt {attempt}/{lens_max_attempts})")
+            print("=" * 78)
+            print(prompt_revision)
+            print("=" * 78)
+            _require_approval(
+                prompt_text=f"Type APPROVE to regenerate {image_path.name} using the Gemini lens prompt above.",
+                skip_message="Lens revision not approved. Exiting.",
+                allow_auto=True,
+            )
+
+            prompt = prompt_revision
+            if gen_type == "T2I":
+                generate_image(prompt, image_path)
+            else:
+                if not source_image_paths:
+                    raise RuntimeError("[Gemini lens] I2I regeneration requires source_image_paths.")
+                generate_image_from_images(prompt=prompt, image_paths=source_image_paths, out_path=image_path)
+
+        raise RuntimeError(f"[Gemini lens] Image still not usable after {lens_max_attempts} attempts: {image_path}")
+
+    def _final_image_prompt_after_revisor_show_and_approve(
+        draft_prompt: str,
+        *,
+        image_purpose: str,
+        generation_type: str,
+        header: str,
+        approve_message: str,
+    ) -> str:
+        """
+        Run Gemini text pre-reviser on the draft (if enabled), print the final prompt,
+        then require APPROVE before the caller runs generate_image / generate_image_from_images.
+        """
+        draft = (draft_prompt or "").strip()
+        final = draft
+        if pre_reviser_enabled and main_script and video_objective:
+            try:
+                final = revise_image_generation_prompt_gemini(
+                    draft_prompt=draft,
+                    full_script=main_script,
+                    video_objective=video_objective,
+                    image_purpose=image_purpose,
+                    generation_type=generation_type,
+                )
+            except Exception as e:
+                print(f"[WARN] Prompt pre-reviser failed ({header}): {e}")
+                final = draft
+        else:
+            if not pre_reviser_enabled:
+                print(f"[Prompt pre-reviser] Skipped for {header} (IMAGE_PROMPT_PRE_REVISER_ENABLED=0).")
+
+        print("\n" + "=" * 78)
+        print(f"{header} — IMAGE GENERATION PROMPT (AFTER REVISOR)")
+        print("=" * 78)
+        print(final)
+        print("=" * 78)
+        _require_approval(
+            prompt_text=approve_message,
+            skip_message="Image generation not approved. Exiting.",
+            allow_auto=True,
+        )
+        return final
 
     ingredient_paths: Dict[str, Path] = {}
     shot_1_first_frame_path = frames_dir / "shot_001_first.png"
@@ -657,39 +777,64 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
             style_suffix = (style_bible.get("style_suffix") or "").strip() if style_bible else ""
             full_prompt = style_prefix + first_frame_t2i_prompt + (" " + style_suffix if style_suffix else "")
             full_prompt = _add_video_context_to_prompt(full_prompt, 1, len(shots), main_script, "image")
-            print("\n" + "-" * 78)
-            print("FIRST FRAME T2I PROMPT — REVIEW & APPROVE")
-            print("-" * 78)
-            print(full_prompt)
-            _require_approval(
-                prompt_text="Type APPROVE to generate shot 1 first frame (single T2I).",
-                skip_message="First frame T2I not approved. Exiting.",
-                allow_auto=True,
+            image_purpose = (
+                "Shot 1 opening FIRST FRAME. This is the starting image for the video. "
+                f"Intended prompt intent: {first_frame_t2i_prompt}"
             )
-            print("\n[T2I] Generating first frame (single prompt)...")
+            full_prompt = _final_image_prompt_after_revisor_show_and_approve(
+                full_prompt,
+                image_purpose=image_purpose,
+                generation_type="T2I",
+                header="SHOT 1 FIRST FRAME",
+                approve_message="Type APPROVE to generate shot 1 first frame with the prompt above.",
+            )
+            print("\n[T2I] Generating first frame...")
             generate_image(full_prompt, shot_1_first_frame_path)
             print("[OK] First frame ready.")
 
-            # Context reviser: check if first frame fits the video narrative
-            video_objective = (state.get("user_prompt") or "").strip()
-            if main_script and video_objective:
-                print("\n[Context reviser] Checking if first frame fits video context...")
+            # Universal Gemini lens reviser for ALL images (logic + context + science).
+            # When enabled, it replaces the older context-only reviser for this first frame.
+            if lens_enabled and main_script and video_objective:
                 try:
-                    fits_context, context_changes = revise_first_frame_for_context(
-                        shot_1_first_frame_path,
-                        main_script,
-                        video_objective,
+                    _run_gemini_image_lens_until_usable(
+                        image_path=shot_1_first_frame_path,
+                        generation_type="T2I",
+                        current_prompt=full_prompt,
+                        image_purpose=image_purpose,
                     )
-                    if not fits_context and context_changes:
-                        print(f"[Context reviser] First frame needs changes: {context_changes[:200]}...")
-                        revised_prompt = f"{style_prefix + first_frame_t2i_prompt + (' ' + style_suffix if style_suffix else '')} Apply these changes: {context_changes}"
-                        revised_prompt = _add_video_context_to_prompt(revised_prompt, 1, len(shots), main_script, "image")
-                        generate_image(revised_prompt, shot_1_first_frame_path)
-                        print("[OK] First frame regenerated with context corrections.")
-                    elif fits_context:
-                        print("[Context reviser] First frame fits the video context.")
                 except Exception as e:
-                    print(f"[WARN] Context reviser skipped: {e}")
+                    print(f"[WARN] Gemini lens skipped for first frame: {e}")
+            else:
+                # Context reviser: check if first frame fits the video narrative
+                if main_script and video_objective:
+                    print("\n[Context reviser] Checking if first frame fits video context...")
+                    try:
+                        fits_context, context_changes = revise_first_frame_for_context(
+                            shot_1_first_frame_path,
+                            main_script,
+                            video_objective,
+                        )
+                        if not fits_context and context_changes:
+                            print(f"[Context reviser] First frame needs changes: {context_changes[:200]}...")
+                            revised_prompt = f"{style_prefix + first_frame_t2i_prompt + (' ' + style_suffix if style_suffix else '')} Apply these changes: {context_changes}"
+                            revised_prompt = _add_video_context_to_prompt(revised_prompt, 1, len(shots), main_script, "image")
+                            purpose_ctx = (
+                                "Shot 1 opening FIRST FRAME after context reviser corrections. "
+                                f"Original intent: {first_frame_t2i_prompt}"
+                            )
+                            revised_prompt = _final_image_prompt_after_revisor_show_and_approve(
+                                revised_prompt,
+                                image_purpose=purpose_ctx,
+                                generation_type="T2I",
+                                header="SHOT 1 FIRST FRAME (CONTEXT CORRECTION)",
+                                approve_message="Type APPROVE to regenerate first frame with the prompt above.",
+                            )
+                            generate_image(revised_prompt, shot_1_first_frame_path)
+                            print("[OK] First frame regenerated with context corrections.")
+                        elif fits_context:
+                            print("[Context reviser] First frame fits the video context.")
+                    except Exception as e:
+                        print(f"[WARN] Context reviser skipped: {e}")
         else:
             print(f"[REUSE] Reusing first frame: {shot_1_first_frame_path.name}")
     else:
@@ -705,6 +850,7 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
             image_path = ingredients_dir / f"{safe_name}.png"
             ingredient_paths[name] = image_path
             prompt = (ing.get("t2i_prompt") or "").strip()
+            ingredient_desc = (ing.get("description") or "").strip()
             matplotlib_code = (ing.get("matplotlib_code") or "").strip()
             if not image_path.exists():
                 if matplotlib_code:
@@ -722,11 +868,25 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                 full_prompt = style_prefix + prompt + (" " + style_suffix if style_suffix else "")
                 if main_script and shots:
                     full_prompt = _add_video_context_to_prompt(full_prompt, 1, len(shots), main_script, "image")
-                print(f"\n[IMG] INGREDIENT '{name}' T2I — REVIEW & APPROVE")
-                print("-" * 78)
-                print(full_prompt)
-                _require_approval(prompt_text=f"Type APPROVE to generate '{name}'.", skip_message="Not approved. Exiting.", allow_auto=True)
+                image_purpose = f"Ingredient '{name}'. Intended usage/appearance: {ingredient_desc or name}"
+                full_prompt = _final_image_prompt_after_revisor_show_and_approve(
+                    full_prompt,
+                    image_purpose=image_purpose,
+                    generation_type="T2I",
+                    header=f"INGREDIENT '{name}'",
+                    approve_message=f"Type APPROVE to generate ingredient '{name}' with the prompt above.",
+                )
                 generate_image(full_prompt, image_path)
+                if lens_enabled and main_script and video_objective:
+                    try:
+                        _run_gemini_image_lens_until_usable(
+                            image_path=image_path,
+                            generation_type="T2I",
+                            current_prompt=full_prompt,
+                            image_purpose=image_purpose,
+                        )
+                    except Exception as e:
+                        print(f"[WARN] Gemini lens skipped for ingredient '{name}': {e}")
                 print(f"[OK] {name}")
             else:
                 print(f"[REUSE] Reusing: {name} -> {image_path.name}")
@@ -743,7 +903,6 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
     previous_shot_last_path: Optional[Path] = None
     use_veo = video_backend == "veo"
     use_kling = video_backend == "kling"
-    topic_hint = (state.get("user_prompt") or "").strip()[:500]  # For scientific revision context
     reference_elements_dir = project_dir / "reference_elements"
     reference_elements_dir.mkdir(parents=True, exist_ok=True)
 
@@ -794,41 +953,82 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
 
         t2i_prompt = _build_reference_element_t2i_prompt(element_name, element_desc, shot_id=shot_id)
         print(f"\n[REF ELEMENT] Generating reference element '{element_name}' -> {out_path.name}")
-        _require_approval(
-            prompt_text=f"Type APPROVE to generate reference element image '{element_name}'.",
-            skip_message="Reference element not approved. Exiting.",
-            allow_auto=True,
+        image_purpose = f"Reference element '{element_name}'. Intended usage/appearance: {element_desc}"
+        t2i_prompt = _final_image_prompt_after_revisor_show_and_approve(
+            t2i_prompt,
+            image_purpose=image_purpose,
+            generation_type="T2I",
+            header=f"REFERENCE ELEMENT '{element_name}' (T2I)",
+            approve_message=f"Type APPROVE to generate reference element '{element_name}' with the prompt above.",
         )
         generate_image(t2i_prompt, out_path)
+        if lens_enabled and main_script and video_objective:
+            try:
+                _run_gemini_image_lens_until_usable(
+                    image_path=out_path,
+                    generation_type="T2I",
+                    current_prompt=t2i_prompt,
+                    image_purpose=image_purpose,
+                )
+            except Exception as e:
+                print(f"[WARN] Gemini lens skipped for reference element '{element_name}' (T2I): {e}")
 
         # Run revisers to enforce element consistency/accuracy.
         try:
             print(f"[REF ELEMENT] I2I reviser: {element_name}")
             i2i_prompt = describe_changes_for_i2i(out_path, element_desc)
             i2i_prompt = _add_video_context_to_prompt(i2i_prompt, shot_id, len(shots), main_script, "image")
-            _require_approval(
-                prompt_text=f"Type APPROVE to revise reference element '{element_name}' (I2I).",
-                skip_message="Reference element revision not approved. Exiting.",
-                allow_auto=True,
+            image_purpose = f"Reference element '{element_name}' I2I revision. Intended usage/appearance: {element_desc}"
+            i2i_prompt = _final_image_prompt_after_revisor_show_and_approve(
+                i2i_prompt,
+                image_purpose=image_purpose,
+                generation_type="I2I",
+                header=f"REFERENCE ELEMENT '{element_name}' (I2I)",
+                approve_message=f"Type APPROVE to revise reference element '{element_name}' (I2I) with the prompt above.",
             )
             generate_image_from_images(prompt=i2i_prompt, image_paths=[out_path], out_path=out_path)
+            if lens_enabled and main_script and video_objective:
+                try:
+                    _run_gemini_image_lens_until_usable(
+                        image_path=out_path,
+                        generation_type="I2I",
+                        current_prompt=i2i_prompt,
+                        image_purpose=image_purpose,
+                        source_image_paths=[out_path],
+                    )
+                except Exception as e:
+                    print(f"[WARN] Gemini lens skipped for reference element '{element_name}' (I2I): {e}")
         except Exception as e:
             print(f"[WARN] Reference element I2I reviser skipped for '{element_name}': {e}")
 
-        try:
-            print(f"[REF ELEMENT] Scientific revision check: {element_name}")
-            shot_context = f"Reference element '{element_name}' should match: {element_desc}"
-            is_accurate, suggested_changes = revise_frames_for_scientific_accuracy(
-                out_path,
-                out_path,
-                shot_context,
-                topic_hint=topic_hint,
-            )
-            if not is_accurate and suggested_changes:
-                sci_prompt = _add_video_context_to_prompt(suggested_changes, shot_id, len(shots), main_script, "image")
-                generate_image_from_images(prompt=sci_prompt, image_paths=[out_path], out_path=out_path)
-        except Exception as e:
-            print(f"[WARN] Reference element scientific revision skipped for '{element_name}': {e}")
+        # If Gemini lens is enabled, it already performs logic + context + scientific accuracy
+        # checks, and iteratively regenerates until usable.
+        if not lens_enabled:
+            try:
+                print(f"[REF ELEMENT] Scientific revision check: {element_name}")
+                shot_context = f"Reference element '{element_name}' should match: {element_desc}"
+                is_accurate, suggested_changes = revise_frames_for_scientific_accuracy(
+                    out_path,
+                    out_path,
+                    shot_context,
+                    topic_hint=topic_hint,
+                )
+                if not is_accurate and suggested_changes:
+                    sci_prompt = _add_video_context_to_prompt(suggested_changes, shot_id, len(shots), main_script, "image")
+                    purpose_sci = (
+                        f"Reference element '{element_name}' — scientific accuracy correction via I2I. "
+                        f"Target: {element_desc}"
+                    )
+                    sci_prompt = _final_image_prompt_after_revisor_show_and_approve(
+                        sci_prompt,
+                        image_purpose=purpose_sci,
+                        generation_type="I2I",
+                        header=f"REFERENCE ELEMENT '{element_name}' (SCIENTIFIC FIX)",
+                        approve_message=f"Type APPROVE to apply scientific corrections to '{element_name}' with the prompt above.",
+                    )
+                    generate_image_from_images(prompt=sci_prompt, image_paths=[out_path], out_path=out_path)
+            except Exception as e:
+                print(f"[WARN] Reference element scientific revision skipped for '{element_name}': {e}")
 
         return out_path
 

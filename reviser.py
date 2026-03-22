@@ -493,3 +493,200 @@ def revise_shot_frames_for_context(
     fits = bool(out.get("fits_context", True))
     changes = out.get("changes_needed") or None
     return fits, changes
+
+
+# ---------------------------------------------------------
+# GEMINI LENS: universal image QA + prompt fixer
+# ---------------------------------------------------------
+IMAGE_LENS_SYSTEM = """You are an image QA reviewer and prompt fixer for educational explainer video ingredients.
+
+You are given:
+- an attached image
+- the FULL VIDEO SCRIPT of the long video (all shots)
+- the MAIN VIDEO OBJECTIVE/topic
+- a short IMAGE PURPOSE (what this ingredient is supposed to accomplish in the video)
+- the ORIGINAL GENERATION PROMPT that was used to create this exact image (it may contain mistakes)
+- GENERATION TYPE: either T2I (text-to-image) or I2I (image-to-image)
+
+Your job:
+1) LOGICAL REALISM CHECK: verify the image has no illogical errors and is realistic within its context.
+2) CONTEXT FIT CHECK: verify the image matches the full video script narrative purpose and the specific usage/objective of THIS image purpose.
+3) SCIENTIFIC ACCURACY CHECK: verify there are no scientific mistakes (physics/chemistry/biology etc.). If unsure, be conservative and request corrections.
+
+DECIDE:
+- If the image is fully usable: output JSON with
+  {"is_usable": true, "issues": null, "prompt_revision": null}
+- If not usable: output JSON with
+  {"is_usable": false, "issues": "<short description of what is wrong>", "prompt_revision": "<corrected prompt>"}
+
+PROMPT REVISION RULES (IMPORTANT):
+- The prompt_revision MUST be a complete prompt that can be used to regenerate the image role AGAIN.
+- Keep style/camera/lighting constraints consistent with the current prompt unless the image has mistakes.
+- If GENERATION TYPE is I2I, write a prompt that describes the required CHANGES to be applied relative to the I2I inputs (not a full standalone description), in imperative form.
+- If GENERATION TYPE is T2I, write a full prompt for generating the corrected image from scratch.
+- Include the exact corrections needed to fix the problems.
+
+OUTPUT FORMAT:
+Return ONLY valid JSON. No markdown. No extra text.
+"""
+
+
+def revise_image_with_gemini_lens(
+    image_path: Path,
+    *,
+    original_prompt: str,
+    full_script: str,
+    video_objective: str,
+    image_purpose: str,
+    generation_type: str,
+    topic_hint: str = "",
+) -> Tuple[bool, Optional[str], Optional[str]]:
+    """
+    Gemini VLM "lens" reviewer:
+    - Checks logical realism, script/context fit, and scientific accuracy.
+    - If issues exist, returns a corrected prompt_revision suitable for re-generating
+      the same image role using the same generation_type (T2I or I2I).
+
+    Returns:
+      (is_usable, prompt_revision_or_none, issues_or_none)
+    """
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY not found in .env (required for image lens reviser)")
+
+    if not image_path.exists():
+        raise FileNotFoundError(f"Image not found: {image_path}")
+
+    client = genai.Client(api_key=api_key)
+    model = (os.getenv("REVISER_MODEL") or os.getenv("PLANNER_MODEL") or "gemini-2.5-flash").strip()
+
+    img = Image.open(image_path)
+    gen_type = (generation_type or "").strip().upper()
+    if gen_type not in {"T2I", "I2I"}:
+        gen_type = "T2I"
+
+    user_content = (
+        f"GENERATION TYPE: {gen_type}\n\n"
+        f"MAIN VIDEO OBJECTIVE:\n{(video_objective or '').strip()[:1200]}\n\n"
+        f"IMAGE PURPOSE (what this ingredient must accomplish):\n{(image_purpose or '').strip()[:1200]}\n\n"
+        f"TOPIC HINT (scientific focus):\n{(topic_hint or '').strip()[:800]}\n\n"
+        f"FULL VIDEO SCRIPT (context):\n{(full_script or '').strip()[:3500]}\n\n"
+        f"ORIGINAL GENERATION PROMPT (may contain mistakes):\n\"\"\"\n{(original_prompt or '').strip()[:2500]}\n\"\"\"\n\n"
+        "Check the attached image against the 3 requirements. If incorrect, output a corrected prompt_revision."
+    )
+
+    response = client.models.generate_content(
+        model=model,
+        contents=[img, user_content],
+        config=GenerateContentConfig(system_instruction=IMAGE_LENS_SYSTEM),
+    )
+
+    text = getattr(response, "text", None)
+    if not text and getattr(response, "candidates", None):
+        if response.candidates:
+            c = response.candidates[0]
+            parts = getattr(getattr(c, "content", None), "parts", None) or []
+            if parts:
+                text = getattr(parts[0], "text", None)
+
+    if not text or not text.strip():
+        raise RuntimeError("Image lens reviser returned empty response")
+
+    out = _extract_json_obj(text)
+    is_usable = bool(out.get("is_usable", True))
+    prompt_revision = out.get("prompt_revision")
+    issues = out.get("issues")
+
+    if is_usable:
+        return True, None, None
+
+    if not isinstance(prompt_revision, str) or not prompt_revision.strip():
+        raise RuntimeError("Image lens reviser found issues but returned empty prompt_revision")
+
+    return False, prompt_revision.strip(), (issues if isinstance(issues, str) else None)
+
+
+# ---------------------------------------------------------
+# GEMINI: pre-generation prompt reviser (text-only, no image yet)
+# ---------------------------------------------------------
+IMAGE_PROMPT_PRE_REVISER_SYSTEM = """You refine prompts for generative image models used in educational explainer videos.
+
+You receive:
+- FULL VIDEO SCRIPT (all shots)
+- MAIN VIDEO OBJECTIVE / topic
+- IMAGE PURPOSE (what this specific image must accomplish)
+- GENERATION TYPE: T2I (text-to-image from scratch) or I2I (image-to-image: imperative edits to apply)
+- DRAFT PROMPT that will be sent to the image model
+
+Improve the draft for:
+1) Logical clarity and coherent composition (T2I) or clear imperative edits (I2I)
+2) Fit with the full script narrative and the image purpose
+3) Scientific accuracy; fix misleading diagrams, wrong causal arrows, impossible physics, etc.
+
+Rules:
+- Keep style / framing / safety constraints from the draft (e.g. no faces, no text) unless they conflict with correctness.
+- For I2I: prefer imperative commands (Add/Remove/Make/Keep) consistent with the draft; do not replace with an unrelated full scene unless the draft is fundamentally wrong.
+- Return ONLY valid JSON (no markdown):
+  {"revised_prompt": "<complete prompt ready to send to the image model>"}
+"""
+
+
+def revise_image_generation_prompt_gemini(
+    *,
+    draft_prompt: str,
+    full_script: str,
+    video_objective: str,
+    image_purpose: str,
+    generation_type: str,
+) -> str:
+    """
+    Text-only Gemini reviser: refines the draft prompt before any image is generated.
+    Returns the revised prompt string (falls back to draft on empty/parse issues).
+    """
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY not found in .env (required for prompt pre-reviser)")
+
+    draft = (draft_prompt or "").strip()
+    if not draft:
+        return draft
+
+    client = genai.Client(api_key=api_key)
+    model = (os.getenv("REVISER_MODEL") or os.getenv("PLANNER_MODEL") or "gemini-2.5-flash").strip()
+    gen_type = (generation_type or "").strip().upper()
+    if gen_type not in {"T2I", "I2I"}:
+        gen_type = "T2I"
+
+    user_content = (
+        f"GENERATION TYPE: {gen_type}\n\n"
+        f"MAIN VIDEO OBJECTIVE:\n{(video_objective or '').strip()[:1200]}\n\n"
+        f"IMAGE PURPOSE:\n{(image_purpose or '').strip()[:1200]}\n\n"
+        f"FULL VIDEO SCRIPT:\n{(full_script or '').strip()[:3500]}\n\n"
+        f"DRAFT PROMPT:\n\"\"\"\n{draft[:4000]}\n\"\"\"\n\n"
+        "Return JSON only with key revised_prompt."
+    )
+
+    response = client.models.generate_content(
+        model=model,
+        contents=[user_content],
+        config=GenerateContentConfig(system_instruction=IMAGE_PROMPT_PRE_REVISER_SYSTEM),
+    )
+
+    text = getattr(response, "text", None)
+    if not text and getattr(response, "candidates", None) and response.candidates:
+        c = response.candidates[0]
+        parts = getattr(getattr(c, "content", None), "parts", None) or []
+        if parts:
+            text = getattr(parts[0], "text", None)
+    if not text or not text.strip():
+        return draft
+
+    try:
+        out = _extract_json_obj(text)
+    except Exception:
+        return draft
+
+    rp = out.get("revised_prompt")
+    if isinstance(rp, str) and rp.strip():
+        return rp.strip()
+    return draft
