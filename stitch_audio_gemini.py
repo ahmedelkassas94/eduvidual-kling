@@ -20,6 +20,31 @@ load_dotenv()
 # ElevenLabs default voice
 DEFAULT_ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"
 
+GEMINI_AUDIO_SPEC_VFX_ONLY_SYSTEM = """You are an expert sound designer for educational videos. You are given:
+1. The ACTUAL stitched video (what was really produced).
+2. The ORIGINAL script (for reference to understand what is shown).
+
+Your task is to ANALYZE THE VIDEO and produce a precise audio specification for sound effects ONLY. NO narration, NO voiceover.
+Output ONLY sound effects and VFX that match the visuals: camera movements (whoosh on zoom, subtle rumble on pan), object motion (swoosh, flow, creak), ambient (soft hum, nature, space), and movement-specific sounds.
+
+Output a JSON object with this exact structure (no markdown):
+{
+  "narration_segments": [],
+  "sound_design": [
+    {
+      "start_s": 0.0,
+      "end_s": 5.0,
+      "description": "Detailed SFX description for ElevenLabs, e.g. soft whoosh as camera zooms in, subtle ambient hum, gentle crackle."
+    }
+  ]
+}
+
+Rules:
+- narration_segments: MUST be an empty array. No narration.
+- sound_design: 4–10 segments covering the full video. Describe VFX: whooshes, rumbles, swooshes, ambient, movement sounds. Match timing to visual events (zooms, pans, object motion, scene changes).
+- Each description should be specific for ElevenLabs sound generation (e.g. "subtle whoosh as diagram zooms in", "low rumble as magma rises", "soft ambient sci-fi hum")."""
+
+
 GEMINI_AUDIO_SPEC_SYSTEM = """You are an expert audio director for educational videos. You are given:
 1. The ACTUAL stitched video (what was really produced).
 2. The ORIGINAL long-form script (what was planned) — for reference only.
@@ -95,10 +120,12 @@ def gemini_analyze_video_and_script(
     video_path: Path,
     main_script: str,
     video_duration_s: float,
+    vfx_only: bool = False,
 ) -> Dict[str, Any]:
     """
     Send the stitched video (as key frames) and original script to Gemini.
     Returns JSON with narration_segments and sound_design, based on analysis of the video.
+    When vfx_only=True, produces sound_design only (no narration).
     """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -109,18 +136,24 @@ def gemini_analyze_video_and_script(
     # Prefer native video upload when available; else key frames
     try:
         uploaded = client.files.upload(file=str(video_path))
+        system = GEMINI_AUDIO_SPEC_VFX_ONLY_SYSTEM if vfx_only else GEMINI_AUDIO_SPEC_SYSTEM
         user_content = (
             f"The attached file is the full stitched video (duration ~{video_duration_s:.1f}s).\n\n"
             "ORIGINAL SCRIPT (for reference only — the video may differ):\n"
             f"\"\"\"\n{main_script[:4000]}\n\"\"\"\n\n"
-            "Analyze the video and compare it to this script. Output the JSON audio spec "
-            "that matches what is actually shown in the video (timing, content, tone)."
+            + (
+                "Analyze the video. Output the JSON with sound_design ONLY (narration_segments must be empty). "
+                "Describe VFX/sound effects for camera movements, zooms, object motion, ambient."
+                if vfx_only
+                else "Analyze the video and compare it to this script. Output the JSON audio spec "
+                "that matches what is actually shown in the video (timing, content, tone)."
+            )
         )
         response = client.models.generate_content(
             model=model,
             contents=[uploaded, user_content],
             config=GenerateContentConfig(
-                system_instruction=GEMINI_AUDIO_SPEC_SYSTEM,
+                system_instruction=system,
                 response_mime_type="application/json",
             ),
         )
@@ -135,7 +168,7 @@ def gemini_analyze_video_and_script(
     except Exception as e:
         print(f"[WARN] Gemini with video file failed: {e}. Using key frames...")
 
-    return _gemini_analyze_key_frames(video_path, main_script, video_duration_s, client, model)
+    return _gemini_analyze_key_frames(video_path, main_script, video_duration_s, client, model, vfx_only=vfx_only)
 
 
 def _gemini_analyze_key_frames(
@@ -144,6 +177,7 @@ def _gemini_analyze_key_frames(
     video_duration_s: float,
     client: genai.Client,
     model: str,
+    vfx_only: bool = False,
 ) -> Dict[str, Any]:
     """Fallback: extract key frames and send images to Gemini."""
     from PIL import Image
@@ -162,10 +196,15 @@ def _gemini_analyze_key_frames(
     if not frame_paths:
         raise RuntimeError("No key frames extracted")
 
+    system = GEMINI_AUDIO_SPEC_VFX_ONLY_SYSTEM if vfx_only else GEMINI_AUDIO_SPEC_SYSTEM
     content_parts = [
         f"The following {len(frame_paths)} images are key frames from the video (duration ~{video_duration_s:.1f}s).\n\n"
         "ORIGINAL SCRIPT (reference only):\n\"\"\"\n" + main_script[:4000] + "\n\"\"\"\n\n"
-        "Analyze what the video shows and output the JSON audio spec (narration_segments + sound_design) that matches the video.",
+        + (
+            "Analyze what the video shows. Output JSON with sound_design ONLY (narration_segments empty). Describe VFX for movements."
+            if vfx_only
+            else "Analyze what the video shows and output the JSON audio spec (narration_segments + sound_design) that matches the video."
+        ),
     ]
     for fp in frame_paths:
         content_parts.append(Image.open(fp))
@@ -174,7 +213,7 @@ def _gemini_analyze_key_frames(
         model=model,
         contents=content_parts,
         config=GenerateContentConfig(
-            system_instruction=GEMINI_AUDIO_SPEC_SYSTEM,
+            system_instruction=system,
             response_mime_type="application/json",
         ),
     )
@@ -353,15 +392,24 @@ def generate_audio_from_gemini_spec(
             _concat_audio_files(ffmpeg, [sfx_path, silence_tail], padded_sfx)
             sfx_path = padded_sfx
 
+    # VFX only: use SFX track as final audio (no narration)
+    if not narration_segments:
+        return sfx_path
+
     # Mix voice + SFX
     combined = project_dir / "temp_stitch_combined_audio.m4a"
     _mix_voice_and_sfx(ffmpeg, voice_path, sfx_path, combined)
     return combined
 
 
-def analyze_video_and_generate_audio(project_dir: Path, stitched_video_path: Path) -> Path:
+def analyze_video_and_generate_audio(
+    project_dir: Path,
+    stitched_video_path: Path,
+    vfx_only: bool = False,
+) -> Path:
     """
     Step 2 + 3: Send stitched video + script to Gemini → get spec → generate audio with ElevenLabs → return path to combined audio.
+    When vfx_only=True, produces VFX/sound effects only (no narration).
     """
     state = _load_state(project_dir)
     main_script = (state.get("main_script_15s") or "").strip()
@@ -370,15 +418,15 @@ def analyze_video_and_generate_audio(project_dir: Path, stitched_video_path: Pat
 
     video_duration_s = _get_video_duration_s(stitched_video_path)
     print(f"[STITCH AUDIO] Video duration: {video_duration_s:.1f}s")
-    print("[STITCH AUDIO] Sending video + script to Gemini for analysis and audio spec...")
-    spec = gemini_analyze_video_and_script(stitched_video_path, main_script, video_duration_s)
+    print(f"[STITCH AUDIO] Sending video + script to Gemini ({'VFX only' if vfx_only else 'narration + SFX'})...")
+    spec = gemini_analyze_video_and_script(stitched_video_path, main_script, video_duration_s, vfx_only=vfx_only)
     spec_path = project_dir / "audio" / "gemini_audio_spec.json"
     spec_path.parent.mkdir(parents=True, exist_ok=True)
     with spec_path.open("w", encoding="utf-8") as f:
         json.dump(spec, f, indent=2)
     print(f"[STITCH AUDIO] Spec saved to {spec_path.name}")
 
-    print("[STITCH AUDIO] Generating narration and SFX with ElevenLabs...")
+    print(f"[STITCH AUDIO] Generating {'VFX/SFX' if vfx_only else 'narration and SFX'} with ElevenLabs...")
     combined_audio = generate_audio_from_gemini_spec(spec, video_duration_s, project_dir)
     print(f"[OK] Combined audio: {combined_audio}")
     return combined_audio

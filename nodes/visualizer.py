@@ -4,15 +4,17 @@ for each scene blueprint. Wraps existing image_client. Can be run in isolation f
 """
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
-from dotenv import load_dotenv
-
-load_dotenv()
+import env_loader  # noqa: F401 - load .env from project root first
 
 
-def _build_prompt(blueprint: Dict[str, Any], style_config: Dict[str, Any]) -> str:
-    """Combine scene visual_prompt with global style_config."""
+def _build_prompt(
+    blueprint: Dict[str, Any],
+    style_config: Dict[str, Any],
+    revisions: Optional[List[str]] = None,
+) -> str:
+    """Combine scene visual_prompt with global style_config and optional critic revisions."""
     prompt = blueprint.get("visual_prompt", "")
     if not prompt:
         return "Professional educational illustration, clean, well-lit, no people."
@@ -22,6 +24,10 @@ def _build_prompt(blueprint: Dict[str, Any], style_config: Dict[str, Any]) -> st
         parts.append(f"Style: {style['visual_style']}")
     if style.get("lighting"):
         parts.append(f"Lighting: {style['lighting']}")
+    if revisions:
+        parts.append("CRITICAL CORRECTIONS (apply these):")
+        for r in revisions:
+            parts.append(f"- {r}")
     return " ".join(parts)
 
 
@@ -36,6 +42,7 @@ def visualizer_node(state: Dict[str, Any]) -> Dict[str, Any]:
     output_dir = state.get("output_dir", "workflow_output")
     critic_feedback = state.get("critic_feedback") or {}
     failing_scenes = critic_feedback.get("failing_scenes") or []
+    revisions_by_scene: Dict[str, List[str]] = critic_feedback.get("revisions") or {}
 
     # If critic requested re-generation, only redo those scenes; keep existing image_paths
     image_paths = dict(state.get("image_paths") or {})
@@ -61,7 +68,8 @@ def visualizer_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
     for blueprint in to_generate:
         scene_id = blueprint.get("scene_id", "scene_unknown")
-        full_prompt = _build_prompt(blueprint, style_config)
+        revisions = revisions_by_scene.get(scene_id)
+        full_prompt = _build_prompt(blueprint, style_config, revisions=revisions)
         out_path = root / f"{scene_id}.png"
         generate_image(full_prompt, out_path)
         image_paths[scene_id] = str(out_path.resolve())

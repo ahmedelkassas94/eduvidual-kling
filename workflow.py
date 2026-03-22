@@ -12,7 +12,7 @@ from nodes.retriever import retriever_node
 from nodes.planner import planner_node
 from nodes.stylist import stylist_node
 from nodes.visualizer import visualizer_node
-from nodes.critic import critic_node
+from nodes.critic import scientific_critic_node
 
 try:
     from langgraph.graph import StateGraph, END
@@ -21,7 +21,12 @@ except ImportError:
 
 
 def _critic_route(state: VideoProductionState) -> str:
-    """Route after Critic: back to Visualizer to regenerate failing scenes, or END."""
+    """
+    Route after Critic: back to Visualizer to regenerate failing scenes with revisions, or END.
+    Retry logic capped at max_critic_loops (default 3) to prevent infinite loops.
+    When routing to visualizer, critic_feedback.revisions (scene_id -> prompt adjustments)
+    is injected into state for the Visualizer to apply.
+    """
     feedback = state.get("critic_feedback") or {}
     if feedback.get("is_accurate", True):
         return END
@@ -43,7 +48,7 @@ def build_video_production_graph(output_dir: str = "workflow_output") -> StateGr
     graph.add_node("planner", planner_node)
     graph.add_node("stylist", stylist_node)
     graph.add_node("visualizer", visualizer_node)
-    graph.add_node("critic", critic_node)
+    graph.add_node("critic", scientific_critic_node)
 
     graph.add_edge("retriever", "planner")
     graph.add_edge("planner", "stylist")

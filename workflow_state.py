@@ -27,7 +27,9 @@ class VideoProductionState(TypedDict, total=False):
 
     # Critic output: peer review result
     critic_feedback: Dict[str, Any]
-    # critic_feedback must include: is_accurate: bool, failing_scenes: List[str], feedback: str
+    # critic_feedback must include:
+    #   is_accurate: bool, failing_scenes: List[str], feedback: str,
+    #   revisions: Dict[str, List[str]] (scene_id -> list of prompt adjustments)
 
     # Optional: output directory for images (defaults to workflow output dir)
     output_dir: str

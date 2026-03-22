@@ -178,6 +178,13 @@ def _require_env_nonempty(name: str, default: str = "") -> str:
     return value
 
 
+# Default negative prompt for one-shot accuracy (prevents text/label distortion)
+DEFAULT_I2V_NEGATIVE_PROMPT = (
+    "text distortion, gibberish, morphing, blurring, extra labels, spelling changes, "
+    "blur, distort, and low quality, logos, watermarks, people, human, face, hands"
+)
+
+
 def generate_kling_i2v_video(
     *,
     prompt: str,
@@ -188,8 +195,16 @@ def generate_kling_i2v_video(
     negative_prompt: Optional[str] = None,
     generate_audio: bool = False,
     shot_type: str = "customize",
+    motion_bucket: Optional[int] = None,
+    prompt_adherence: Optional[float] = None,
 ) -> Path:
-    """Generate a Kling I2V clip (direct API) and save it to output_path."""
+    """
+    Generate a Kling I2V clip (direct API) and save it to output_path.
+
+    Motion Configuration (one-shot accuracy):
+      motion_bucket: Lower value (e.g. 4) reduces structural warping. Passed if API supports it.
+      prompt_adherence: 0.8+ for stricter adherence to prompt. Some gateways use cfg_scale (0-1).
+    """
     api_key = _require_klingai_api_key()
 
     duration_s_int = int(duration_s)
@@ -224,9 +239,18 @@ def generate_kling_i2v_video(
     # Some Kling v3 gateways do not support negative_prompt in the request body.
     negative_prompt_supported = "kling-v3" not in model_name_norm
 
+    # Merge default negative prompt with user override for one-shot accuracy
+    effective_negative = negative_prompt
+    if effective_negative is None or not effective_negative.strip():
+        effective_negative = DEFAULT_I2V_NEGATIVE_PROMPT
+    else:
+        # User provided partial; merge with defaults (avoid duplicates)
+        base_terms = set(DEFAULT_I2V_NEGATIVE_PROMPT.lower().split(", "))
+        user_terms = set(t.strip() for t in effective_negative.split(",") if t.strip())
+        effective_negative = ", ".join(sorted(base_terms | user_terms))
+
     payload: Dict[str, Any] = {
         "model_name": model_name,
-        # Kling direct APIs typically expect the key name `image`.
         "image": start_image_url,
         "prompt": prompt,
         "duration": duration_s_int,
@@ -238,9 +262,27 @@ def generate_kling_i2v_video(
     if "kling-v3" not in model_name_norm:
         payload["aspect_ratio"] = aspect_ratio
 
-    if negative_prompt_supported and negative_prompt:
-        # Only include if the selected model supports it.
-        payload["negative_prompt"] = negative_prompt
+    if negative_prompt_supported and effective_negative:
+        payload["negative_prompt"] = effective_negative
+
+    # Motion configuration for one-shot accuracy (lower structural warping, stricter prompt adherence).
+    # Set KLING_MOTION_CONFIG_ENABLED=0 to disable if your gateway rejects these params.
+    motion_config_enabled = (
+        os.getenv("KLING_MOTION_CONFIG_ENABLED", "1").strip().lower() not in ("0", "false", "no", "off")
+    )
+    if motion_config_enabled:
+        motion_bucket_val = motion_bucket if motion_bucket is not None else int(
+            (os.getenv("KLING_MOTION_BUCKET") or "4").strip() or "4"
+        )
+        payload["motion_bucket_id"] = motion_bucket_val
+        adj = prompt_adherence
+        if adj is None and os.getenv("KLING_PROMPT_ADHERENCE"):
+            try:
+                adj = float((os.getenv("KLING_PROMPT_ADHERENCE") or "0.8").strip())
+            except ValueError:
+                adj = None
+        if adj is not None and 0 <= adj <= 1:
+            payload["cfg_scale"] = adj
 
     # Keep element images consistent (optional).
     # Kling often supports element placeholders like @Element1 / @Element2 inside the prompt.

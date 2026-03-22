@@ -1,7 +1,8 @@
 import json
 import os
+import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import env_loader  # noqa: F401 - load .env from project root first
 from openai import OpenAI
@@ -189,7 +190,15 @@ def generate_shots_and_ingredients_from_main_script(
         "Set movement_prompt to empty string for every shot (movement_prompt is written later for the video model). "
         "Because the new Kling 3.0 pipeline is FIRST-FRAME-ONLY (we generate only the start frame, then animate with movement), "
         "last_frame_t2i_prompt must be the empty string \"\" for every shot. "
-        "detailed_description must describe what happens in that shot window of the main script."
+        "detailed_description must describe what happens in that shot window of the main script. "
+        "In style_bible.camera_rules, specify that the camera follows the action (dynamic camera, not static). "
+        "DYNAMIC CAMERA INTENT: For EVERY shot you MUST include a camera_path object. The camera should 'hunt' for the action described in the narration. "
+        "camera_path structure: {\"type\": \"...\", \"start_focus\": \"...\", \"end_focus\": \"...\", \"zoom_level\": \"wide\"|\"medium\"|\"close\", \"target\": \"...\" (optional)}. "
+        "type values: tilt_up, tilt_down, pan_left, pan_right, zoom_in, zoom_out, orbit (slight arc), static. "
+        "Use tilt_up when narration describes upward motion (e.g. magma rising); tilt_down for downward (e.g. lava flowing). "
+        "Use zoom_in when a specific ingredient/label is introduced (set target to ingredient name, e.g. \"SURROUNDING ROCK\"); zoom_out to reveal wider context. "
+        "Use pan_left/pan_right when the focus shifts horizontally. start_focus and end_focus describe the spatial element the camera moves from/to (e.g. outer_core, crust, magma_chamber). "
+        "zoom_level: wide (establishing), medium (default), close (detail). Never leave camera_path null; use {\"type\": \"static\", \"zoom_level\": \"medium\"} when no movement is needed."
     )
     user = f"""Topic: {topic}
 
@@ -201,7 +210,7 @@ Timed transcription:
 
 Divide the script into a sequence of shots (each 3–15 seconds) so that the sum of all duration_s equals EXACTLY {total_duration_int} seconds.
 
-Produce JSON with: style_bible (visual_style, camera_rules, lighting_rules, continuity_rules, style_suffix), ingredients (list of {{ name, description, t2i_prompt: null, matplotlib_code: null }}), shots (list with shot_id 1..N, for each shot: time_range \"start-end s\" and duration_s integer 3..15, detailed_description, last_frame_t2i_prompt (must be \"\"), movement_prompt: \"\", ingredient_names, new_ingredient_names, reference_element_names (list of EXACTLY two ingredient names you will use as Kling elements reference images for this shot), narration_text from segments in that range, on_screen_text_overlay, assisting_visual_aids, i2i_spatial_prompt: \"\"), first_frame_t2i_prompt (one long T2I prompt for shot 1 first frame). Output ONLY valid JSON."""
+Produce JSON with: style_bible (visual_style, camera_rules, lighting_rules, continuity_rules, style_suffix), ingredients (list of {{ name, description, t2i_prompt: null, matplotlib_code: null }}), shots (list with shot_id 1..N, for each shot: time_range \"start-end s\" and duration_s integer 3..15, detailed_description, last_frame_t2i_prompt (must be \"\"), movement_prompt: \"\", camera_path (OBJECT with type, start_focus, end_focus, zoom_level, optional target—REQUIRED for every shot), ingredient_names, new_ingredient_names, reference_element_names (list of EXACTLY two ingredient names you will use as Kling elements reference images for this shot), narration_text from segments in that range, on_screen_text_overlay, assisting_visual_aids, i2i_spatial_prompt: \"\"), first_frame_t2i_prompt (one long T2I prompt for shot 1 first frame). Output ONLY valid JSON."""
     raw = _claude_generate(system, user, max_tokens=16384)
     raw = raw.strip()
     if raw.startswith("```"):
@@ -214,21 +223,100 @@ Produce JSON with: style_bible (visual_style, camera_rules, lighting_rules, cont
     return json.loads(raw)
 
 
+def _extract_labels_from_shots(shots: List[Dict[str, Any]], up_to_shot_id: Optional[int] = None) -> List[str]:
+    """
+    Extract text labels from project shots for the INVARIANTS section.
+    Collects on_screen_text_overlay and label-like terms from assisting_visual_aids.
+    If up_to_shot_id is set, only include shots with shot_id <= up_to_shot_id (labels visible so far).
+    """
+    labels: List[str] = []
+    seen: set[str] = set()
+    for s in (shots or []):
+        sid = int(s.get("shot_id", 0) or 0)
+        if up_to_shot_id is not None and sid > up_to_shot_id:
+            continue
+        overlay = (s.get("on_screen_text_overlay") or "").strip()
+        if overlay and overlay.lower() != "none":
+            # Strip surrounding quotes if present
+            clean = overlay.strip('"\'')
+            if clean and clean.lower() not in seen:
+                seen.add(clean.lower())
+                labels.append(clean)
+        aids = (s.get("assisting_visual_aids") or "").strip()
+        if aids and aids.lower() not in ("none", ""):
+            for m in re.finditer(r'"([^"]+)"', aids):
+                lab = m.group(1).strip()
+                if lab and lab.lower() not in seen:
+                    seen.add(lab.lower())
+                    labels.append(lab)
+    return labels
+
+
+def _camera_path_to_action_guidance(camera_path: Optional[Dict[str, Any]], shot: Dict[str, Any]) -> str:
+    """
+    Translate camera_path into explicit directional guidance for the I2V ACTION section.
+    Template: '[ACTION] the camera [DIRECTION] while the [SUBJECT] [ANIMATION].'
+    """
+    if not camera_path or not isinstance(camera_path, dict):
+        return ""
+    ctype = (camera_path.get("type") or "").strip().lower()
+    if not ctype or ctype == "static":
+        return "ANIMATION: Keep camera stable. Subtle parallax: foreground elements move slightly faster than background when the scene has depth."
+    start_f = (camera_path.get("start_focus") or "").strip()
+    end_f = (camera_path.get("end_focus") or "").strip()
+    target = (camera_path.get("target") or "").strip()  # e.g. ingredient name
+    zoom = (camera_path.get("zoom_level") or "medium").strip().lower()
+    subject = (shot.get("detailed_description") or "")[:200] or "the main subject"
+    lines: List[str] = []
+    if ctype == "tilt_up":
+        lines.append(f"Slowly tilt the camera upward from {start_f or 'below'} toward {end_f or 'above'}, following the action described in the narration.")
+    elif ctype == "tilt_down":
+        lines.append(f"Slowly tilt the camera downward from {start_f or 'above'} toward {end_f or 'below'}, following the action described in the narration.")
+    elif ctype == "pan_left":
+        lines.append(f"Slowly pan the camera left, revealing more on the right. Focus moves from {start_f or 'right'} to {end_f or 'left'}.")
+    elif ctype == "pan_right":
+        lines.append(f"Slowly pan the camera right, revealing more on the left. Focus moves from {start_f or 'left'} to {end_f or 'right'}.")
+    elif ctype == "zoom_in":
+        if target:
+            lines.append(f"Slowly zoom in toward the {target} while [SUBJECT] animates. The camera hunts for this element as it is introduced.")
+        else:
+            lines.append(f"Slowly zoom in toward {end_f or 'the focal point'}, following the narration. Foreground moves faster than background (parallax).")
+    elif ctype == "zoom_out":
+        lines.append(f"Slowly zoom out to reveal wider context. Foreground recedes faster than background (parallax). End focus: {end_f or 'wider scene'}.")
+    elif ctype == "orbit":
+        lines.append(f"Slowly orbit the camera in a slight arc around the subject, moving from {start_f or 'initial angle'} to {end_f or 'new angle'}.")
+    else:
+        lines.append(f"Move the camera ({ctype}) from {start_f or 'start'} to {end_f or 'end'}, following the narration.")
+    lines.append("PHYSICS & PARALLAX: The camera has depth. When zooming or tilting, foreground elements move faster than background elements. Create 3D parallax to reinforce scale and spatial relationships.")
+    lines.append("LABELS: All on-screen text and labels must move perfectly with the camera perspective—they are part of the scene, not floating.")
+    return " ".join(lines)
+
+
 CLAUDE_I2V_SYSTEM = """You are an expert at writing image-to-video (I2V) prompts for generative video models (e.g. Kling 3.0).
 
-Your ONLY task: Write a single movement_prompt that will be sent to the I2V model. The prompt must describe how the scene animates during this shot (starting from the FIRST frame you provide).
+Your ONLY task: Write a single movement_prompt that will be sent to the I2V model. The prompt MUST follow this exact structure for one-shot accuracy:
+
+---
+ACTION: [Use the template: "[DIRECTION] the camera [MOVEMENT] while the [SUBJECT] [ANIMATION]." E.g. "Slowly tilt the camera upward and zoom in toward the upper crust, following the flow of the rising orange magma. The labels must move perfectly with the camera perspective." You will be given CAMERA_PATH_GUIDANCE—use it to build explicit directional vectors. NEVER use generic "move forward" prompts. Include camera motion (tilt, pan, zoom) synced with the narration and ingredients. The action must fit exactly within N seconds.]
+
+INVARIANTS: [Explicitly list elements that MUST NOT CHANGE. You will be given LABELS_TO_PROTECT—quote each one in quotes and state they must remain perfectly legible, static, and unchanged in spelling. Also include: @Element1 and @Element2 (if provided) must remain consistent in identity, style, and position. Any diagrams, schematics, or key visual elements that must not morph or warp.]
+
+STYLE CONSISTENCY: [Maintain the 2D clean vector illustration style. No new objects or labels should appear. Keep the same lighting, color palette, and framing unless the ACTION explicitly calls for a change.]
+
+NEGATIVE MOTION: [Avoid text distortion, gibberish, morphing, blurring, extra labels, spelling changes. No hallucinating new objects. Structural integrity must be preserved.]
+---
 
 Requirements:
-- The movement_prompt MUST include (1) NARRATION for this shot — what is being explained (the voiceover content), so the video visuals support and sync with the narration; and (2) ASSISTING VISUAL AIDS for this shot — arrows, highlights, text boxes, text labels as specified for this shot (when present). Describe where they appear, what they point to or say, and how they support the explanation. If the shot has no assisting visual aids, do not invent any.
+- The movement_prompt MUST include (1) NARRATION for this shot — what is being explained (the voiceover content); and (2) ASSISTING VISUAL AIDS for this shot (arrows, highlights, text boxes, text labels) when specified. If the shot has no assisting visual aids, do not invent any.
 - The generated video MUST start exactly with the provided first frame (no variation).
-- IMPORTANT: In the new Kling 3.0 first-frame-only pipeline we do NOT provide/lock an explicit last-frame image. Therefore, do not promise that the final frame matches a provided last-frame image exactly.
-  Instead, ensure the motion naturally settles into a coherent end state that we will extract as the start frame for the next shot.
-- The movement_prompt SHOULD refer to Kling element references using @Element1 and @Element2 (if provided). State that @Element1 and @Element2 must remain consistent (same object identity, style, and approximate position) throughout the clip.
-- Be extremely detailed: for every element give direction, speed, spatial relationships. If something is static, say "remains fixed at ...". Include camera motion.
-- HARD LENGTH CAP (Kling limit): The final movement_prompt output MUST be <= 2400 characters total (including spaces). This is required so the orchestrator prefix + movement_prompt stays <= 2500 for the Kling API.
-- STRICT DURATION (technical constraints): Use language that implies a hard stop. Start or include phrases like "A high-quality N-second clip" or "Short-form, exactly N seconds duration." Never use "about" for duration—the word "about" gives the model permission to vary. State clearly: "Exactly N seconds. No longer."
-- COMPLETE ACTION: The action must naturally fit the duration window. Describe a specific, self-contained action that begins and ends within exactly N seconds (e.g. "camera zooms in from wide to medium and stops", "three steps then stop", "label fades in, holds, then fades out"). Avoid open-ended actions (e.g. "person walking", "camera pans across the scene") that suggest indefinite length—they cause the model to produce longer clips.
-- End with: "The video must begin exactly with the provided first frame. The video must be exactly the required duration in seconds long. Maintain structural integrity and continuity with the source image. No morphing. No hallucinating new objects."
+- IMPORTANT: We do NOT provide/lock an explicit last-frame image. Ensure the motion naturally settles into a coherent end state.
+- The movement_prompt SHOULD refer to @Element1 and @Element2 (if provided) in the INVARIANTS section.
+- HARD LENGTH CAP: The final output MUST be <= 2400 characters. This is required for the Kling API.
+- STRICT DURATION: Start with "A high-quality N-second clip. Exactly N seconds duration." Never use "about".
+- COMPLETE ACTION: The action must begin and end within exactly N seconds. Avoid open-ended motions.
+- If LABELS_TO_PROTECT is provided, you MUST list every label in the INVARIANTS section with: "The text labels [quoted list] must remain perfectly legible, static, and unchanged in spelling."
+- DYNAMIC CAMERA: When CAMERA_PATH_GUIDANCE is provided, the ACTION MUST be driven by it. The camera must "hunt" for the action—synchronize with narration and ingredient introductions.
+- PHYSICS: Include parallax when zooming/tilting—foreground moves faster than background to create depth.
 - Output ONLY the movement_prompt text. No preamble, no "Here is the prompt", no markdown."""
 
 
@@ -236,12 +324,17 @@ def generate_i2v_prompt_claude(
     shot: Dict[str, Any],
     main_script_15s: str,
     first_frame_context: str,
+    all_shots: Optional[List[Dict[str, Any]]] = None,
+    style_bible: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
     Call Claude to write the I2V movement_prompt for one shot. Only I2V prompts are written by Claude.
     first_frame_context: for shot 1 use project first_frame_t2i_prompt;
       for shot N>1 use a short textual context describing the scene at the start of this shot.
       (The actual first frame image is provided to the video model at runtime.)
+    all_shots: When provided, labels from on_screen_text_overlay and assisting_visual_aids are
+      extracted and injected into the INVARIANTS section of the movement prompt.
+    style_bible: Optional visual style config for STYLE CONSISTENCY guidance.
     """
     api_key = env_loader.get_env("ANTHROPIC_API_KEY")
     if not api_key:
@@ -258,6 +351,26 @@ def generate_i2v_prompt_claude(
     shot_id = shot.get("shot_id", 0)
     detailed = (shot.get("detailed_description") or "").strip()
     ingredient_names = shot.get("ingredient_names") or []
+
+    # Extract labels from project_state for INVARIANTS injection (one-shot accuracy)
+    labels_to_protect: List[str] = []
+    if all_shots:
+        labels_to_protect = _extract_labels_from_shots(all_shots, up_to_shot_id=shot_id)
+    labels_block = ""
+    if labels_to_protect:
+        labels_block = (
+            f"\n\nLABELS_TO_PROTECT (MUST list every one in INVARIANTS—they must remain legible, static, unchanged in spelling):\n"
+            + ", ".join(f'"{l}"' for l in labels_to_protect)
+        )
+    style_block = ""
+    if style_bible:
+        vs = (style_bible.get("visual_style") or "").strip()
+        if vs:
+            style_block = f"\n\nSTYLE BIBLE (use for STYLE CONSISTENCY section): {vs[:500]}"
+    camera_path = shot.get("camera_path")
+    camera_path_block = _camera_path_to_action_guidance(camera_path, shot)
+    if camera_path_block:
+        camera_path_block = f"\n\nCAMERA_PATH_GUIDANCE (USE THIS to build the ACTION section—explicit direction, no generic moves):\n{camera_path_block}"
     narration_text = (shot.get("narration_text") or "").strip()
     assisting_visual_aids = (shot.get("assisting_visual_aids") or "").strip() or "none"
     on_screen_overlay = (shot.get("on_screen_text_overlay") or "").strip() or "none"
@@ -297,10 +410,13 @@ ON-SCREEN TEXT OVERLAY: {on_screen_overlay}
 REFERENCE ELEMENTS (Kling 'elements' in the request; refer to them as @Element1 and @Element2):
 - @Element1: {ref1}
 - @Element2: {ref2}
+{labels_block}
+{style_block}
+{camera_path_block}
 
 REQUIRED DURATION (from main script): {exact_duration_text}.
 
-Your movement_prompt MUST: (1) Start with or include a clear technical duration line, e.g. "A high-quality {duration_s}-second clip. Exactly {duration_s} seconds duration." (2) Describe a COMPLETE action that naturally fits in {duration_s} seconds—something that begins and ends in that window, not an open-ended motion. (3) Include the narration and assisting visual aids. Output only the movement_prompt text."""
+Your movement_prompt MUST: (1) Use the exact structure: ACTION, INVARIANTS, STYLE CONSISTENCY, NEGATIVE MOTION. (2) Start with a clear technical duration line, e.g. "A high-quality {duration_s}-second clip. Exactly {duration_s} seconds duration." (3) In INVARIANTS, include LABELS_TO_PROTECT (if any) and @Element1/@Element2. (4) In STYLE CONSISTENCY, maintain 2D clean vector style; no new objects or labels. (5) Include the narration and assisting visual aids. Output only the movement_prompt text."""
 
     client = anthropic.Anthropic(api_key=api_key)
     msg = client.messages.create(

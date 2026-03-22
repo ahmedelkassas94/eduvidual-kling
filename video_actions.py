@@ -273,10 +273,16 @@ def extract_last_frame(video_path: Path, out_png: Path) -> Path:
     )
 
 
-def ensure_video_720p(video_path: Path, *, width: int = 1280, height: int = 720) -> Path:
+def ensure_video_720p(
+    video_path: Path,
+    *,
+    width: int = 1280,
+    height: int = 720,
+    preserve_audio: bool = False,
+) -> Path:
     """
-    Re-encode a video to exactly 720p (1280x720) and remove audio.
-    This is used to enforce the "videos generated should be 720p" requirement.
+    Re-encode a video to exactly 720p (1280x720). By default removes audio;
+    set preserve_audio=True to keep VFX/audio from Kling when using VFX_AUDIO_ONLY.
     """
     path = Path(video_path).resolve()
     if not path.exists():
@@ -297,13 +303,16 @@ def ensure_video_720p(video_path: Path, *, width: int = 1280, height: int = 720)
         path.as_posix(),
         "-vf",
         vf,
-        "-an",
         "-c:v",
         "libx264",
         "-pix_fmt",
         "yuv420p",
-        temp_path.as_posix(),
     ]
+    if preserve_audio:
+        cmd.extend(["-c:a", "aac", "-b:a", "128k"])
+    else:
+        cmd.extend(["-an"])
+    cmd.append(temp_path.as_posix())
     subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     path.unlink(missing_ok=True)
     shutil.move(str(temp_path), str(path))

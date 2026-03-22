@@ -2,9 +2,10 @@
 Stitching pipeline (3 steps):
 1. Stitch clip videos into one big video (no audio).
 2. Send stitched video + original script to Gemini; Gemini analyzes the video and writes
-   a detailed prompt/spec for ElevenLabs (narration + SFX with timing and delivery).
+   a detailed prompt/spec for ElevenLabs (narration + SFX, or VFX-only when VFX_AUDIO_ONLY=1).
 3. Generate audio from that spec (ElevenLabs) and mux with the stitched video → final_video.mp4.
 """
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -60,15 +61,35 @@ def stitch_clips(project_dir: Path, run_audio_pipeline: bool = True) -> Path:
         return output_video
 
     # Prefer main narration script audio (from planner) as the only track for the final video
+    vfx_audio_only = os.getenv("VFX_AUDIO_ONLY", "").strip().lower() in ("1", "true", "yes", "y", "on")
     narration_script_audio = project_dir / "audio" / "narration_script_audio.mp3"
-    if narration_script_audio.exists():
+
+    # When VFX_AUDIO_ONLY + clips already have audio (e.g. from Kling generate_audio): use concat as final
+    clips_have_audio = False
+    if vfx_audio_only and clips:
+        first_clip = Path(clips[0])
+        if first_clip.exists():
+            probe = subprocess.run(
+                [str(_ffmpeg_exe()), "-i", str(first_clip), "-show_entries", "stream=codec_type", "-v", "quiet", "-of", "csv=p=0"],
+                capture_output=True, text=True, timeout=5,
+            )
+            clips_have_audio = "audio" in (probe.stdout or "")
+
+    if not vfx_audio_only and narration_script_audio.exists():
         combined_audio = narration_script_audio
         print("[AUDIO] Using main narration script audio (from planning) for final video.")
+    elif vfx_audio_only and clips_have_audio:
+        # Clips already have VFX audio from Kling; concat preserves it
+        print("[AUDIO] Clips have VFX audio from Kling; using concatenated audio.")
+        temp_video.rename(output_video)
+        return output_video
     else:
         # Step 2 + 3: Gemini analyzes video + script → ElevenLabs audio
         try:
             from stitch_audio_gemini import analyze_video_and_generate_audio
-            combined_audio = analyze_video_and_generate_audio(project_dir, temp_video)
+            combined_audio = analyze_video_and_generate_audio(
+                project_dir, temp_video, vfx_only=vfx_audio_only
+            )
         except Exception as e:
             print(f"[WARN] Audio pipeline failed: {e}")
             print("   Saving final video without audio.")

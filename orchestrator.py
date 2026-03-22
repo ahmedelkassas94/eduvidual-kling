@@ -1047,7 +1047,11 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                 fallback = [str(x).strip() for x in (shot.get("ingredient_names") or []) or []][:2]
                 if len(fallback) == 2:
                     shot["reference_element_names"] = fallback
-            movement_prompt = generate_i2v_prompt_claude(shot, main_script, first_context)
+            movement_prompt = generate_i2v_prompt_claude(
+                shot, main_script, first_context,
+                all_shots=shots,
+                style_bible=style_bible,
+            )
         last_frame_t2i_prompt = (shot.get("last_frame_t2i_prompt") or "").strip()
         ingredient_names = shot.get("ingredient_names") or []
         new_ingredient_names = shot.get("new_ingredient_names") or []
@@ -1330,17 +1334,24 @@ def run_project_ingredients(project_dir: Path, state: dict) -> None:
                 el2_path = _ensure_reference_element_image(el2_name, el2_desc, shot_id=shot_id)
                 element_urls = [frame_to_public_url(el1_path), frame_to_public_url(el2_path)]
 
-                negative_prompt = "blur, distort, and low quality, logos, watermarks, people, human, face, hands"
+                # When VFX_AUDIO_ONLY: Kling can generate movement/VFX sounds natively
+                kling_generate_audio = (
+                    _env_bool("VFX_AUDIO_ONLY", False) and _env_bool("KLING_GENERATE_AUDIO", False)
+                )
                 generate_kling_i2v_video(
                     prompt=i2v_prompt_with_context,
                     start_image_url=current_first_frame_url,
                     duration_s=duration_s,
                     output_path=out_mp4,
                     element_frontal_image_urls=element_urls,
-                    negative_prompt=negative_prompt,
-                    generate_audio=False,
+                    negative_prompt=None,  # Uses DEFAULT_I2V_NEGATIVE_PROMPT (text distortion, morphing, etc.)
+                    generate_audio=kling_generate_audio,
+                    motion_bucket=4,
+                    prompt_adherence=0.8,
                 )
-                ensure_video_720p(out_mp4)
+                if not kling_generate_audio:
+                    strip_audio_from_video(out_mp4)
+                ensure_video_720p(out_mp4, preserve_audio=kling_generate_audio)
             elif use_veo:
                 try:
                     # First attempt: use the movement_prompt as-is

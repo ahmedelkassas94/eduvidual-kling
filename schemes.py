@@ -1,4 +1,4 @@
-from typing import Optional, Literal, List
+from typing import Optional, Literal, List, Dict, Any
 from pydantic import BaseModel, Field, conint, conlist
 
 
@@ -66,6 +66,12 @@ class ScriptShot(BaseModel):
     i2i_spatial_prompt: str = Field(
         "",
         description="Legacy: I2I spatial prompt for shot 1 first frame. Unused when first_frame_t2i_prompt is set.",
+    )
+    # Dynamic Camera Intent: syncs camera with narration and ingredients for educational focus.
+    camera_path: Optional[Dict[str, Any]] = Field(
+        None,
+        description="Camera movement intent: {type, start_focus?, end_focus?, zoom_level?, target?}. "
+        'E.g. {"type": "tilt_up", "start_focus": "outer_core", "end_focus": "crust", "zoom_level": "medium"}.',
     )
 
 

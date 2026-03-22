@@ -124,6 +124,7 @@ def ai_plan_ingredients(prompt: str, target_duration_s: int = 24) -> ProjectStat
         "on_screen_text_overlay": "none",
         "assisting_visual_aids": "",
         "i2i_spatial_prompt": "",
+        "camera_path": None,
     }
 
     def _to_str(v: Any, default: str = "") -> str:
@@ -141,6 +142,10 @@ def ai_plan_ingredients(prompt: str, target_duration_s: int = 24) -> ProjectStat
         out["shot_id"] = shot_id
         out["on_screen_text_overlay"] = _to_str(out.get("on_screen_text_overlay"), "none")
         out["assisting_visual_aids"] = _to_str(out.get("assisting_visual_aids"), "")
+        # camera_path: preserve dict if valid; else None
+        cp = out.get("camera_path")
+        if not isinstance(cp, dict) or not cp.get("type"):
+            out["camera_path"] = None
         return out
 
     shots = [ScriptShot(**_normalize_shot(s, idx)) for idx, s in enumerate(shots_data)]
